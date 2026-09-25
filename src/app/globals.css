@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-brand: #f5751e;
+  --color-brand-light: #ffb275;
+  --color-brand-dark: #b9490c;
+
+  /* Neutrals (on black) */
+  --color-soft: #b3b3b3;
+  --color-subtle: #a6a6a6;
+  --color-muted: #8c8c8c;
+  --color-dim: #6d6d6d;
+  --color-edge: #333333;
+  --color-line-strong: #262626;
+  --color-line: #1c1c1c;
+  --color-line-soft: #151515;
+  --color-placeholder: #5c5c5c;
+
+  --breakpoint-nav: 56.25rem; /* 900px — desktop navigation */
+
+  --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-curtain: cubic-bezier(0.75, 0, 0.2, 1);
+
+  --animate-scroll-hint: scroll-hint 2.2s cubic-bezier(0.6, 0, 0.2, 1) infinite;
+  --animate-slide-in-up: slide-in-up 0.7s var(--ease-smooth);
+  --animate-slide-in-down: slide-in-down 0.7s var(--ease-smooth);
+
+  @keyframes scroll-hint {
+    0% {
+      transform: scaleY(0);
+      transform-origin: top;
+    }
+    45% {
+      transform: scaleY(1);
+      transform-origin: top;
+    }
+    55% {
+      transform: scaleY(1);
+      transform-origin: bottom;
+    }
+    100% {
+      transform: scaleY(0);
+      transform-origin: bottom;
+    }
+  }
+
+  @keyframes slide-in-up {
+    from {
+      transform: translate3d(0, 100%, 0);
+    }
+  }
+
+  @keyframes slide-in-down {
+    from {
+      transform: translate3d(0, -100%, 0);
+    }
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Small uppercase monospace labels used throughout the site. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
+@utility eyebrow-sm {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply overflow-x-hidden bg-black font-sans text-white antialiased;
+  }
+
+  ::selection {
+    @apply bg-brand text-black;
+  }
+
+  :focus-visible {
+    @apply outline-1 outline-offset-4 outline-brand;
+  }
+
+  /* Hide the native cursor while the custom one is active. */
+  @media (pointer: fine) {
+    .has-custom-cursor,
+    .has-custom-cursor * {
+      cursor: none !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
