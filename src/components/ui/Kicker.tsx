@@ -5,11 +5,13 @@ type KickerProps = {
   left: string;
   right: string;
   className?: string;
+  /** Applied to the left phrase and the rule, e.g. to hide them on small screens. */
+  leftClassName?: string;
   ref?: Ref<HTMLDivElement>;
 };
 
 /** Two monospace phrases separated by a short orange rule. */
-export function Kicker({ left, right, className, ref }: KickerProps) {
+export function Kicker({ left, right, className, leftClassName, ref }: KickerProps) {
   return (
     <div
       ref={ref}
@@ -18,8 +20,8 @@ export function Kicker({ left, right, className, ref }: KickerProps) {
         className,
       )}
     >
-      <span>{left}</span>
-      <span aria-hidden className="h-px w-[18px] bg-brand" />
+      <span className={leftClassName}>{left}</span>
+      <span aria-hidden className={cn("h-px w-[18px] bg-brand", leftClassName)} />
       <span>{right}</span>
     </div>
   );

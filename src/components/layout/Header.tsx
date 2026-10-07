@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { NAV_LINKS, SECTION_IDS } from "@/content/site";
 import { useMagnetic } from "@/hooks/useMagnetic";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useActiveSection, useScrolledPast } from "@/hooks/useScrollState";
 import { cn } from "@/lib/cn";
-import { MobileMenu } from "./MobileMenu";
+import { MOBILE_MENU_ID, MobileMenu } from "./MobileMenu";
 
 const navText = "font-mono text-[10.5px] font-semibold tracking-[.14em]";
 
@@ -16,6 +16,7 @@ export function Header() {
   const activeId = useActiveSection(SECTION_IDS);
   const isDesktop = useMediaQuery("(min-width: 900px)");
   const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const ctaRef = useRef<HTMLAnchorElement>(null);
   const ctaInnerRef = useRef<HTMLSpanElement>(null);
@@ -37,6 +38,7 @@ export function Header() {
       >
         <a
           href="#domov"
+          onClick={closeMenu}
           data-cursor="link"
           aria-label="PG INŽENIRING — domov"
           className="flex items-center"
@@ -86,17 +88,24 @@ export function Header() {
 
         <button
           type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-label="Odpri meni"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label={menuOpen ? "Zapri meni" : "Odpri meni"}
           aria-expanded={menuOpen}
-          className="flex h-10 items-center gap-2.5 rounded-full border border-white/22 px-4 font-mono text-[10.5px] tracking-[.16em] text-white nav:hidden"
+          aria-controls={MOBILE_MENU_ID}
+          className="flex h-10 min-w-[92px] items-center justify-center gap-2.5 rounded-full border border-white/22 px-4 font-mono text-[10.5px] tracking-[.16em] text-white nav:hidden"
         >
-          <span aria-hidden className="size-[5px] rounded-full bg-brand" />
-          MENI
+          <span
+            aria-hidden
+            className={cn(
+              "size-[5px] rounded-full bg-brand transition-transform duration-300",
+              menuOpen && "scale-150",
+            )}
+          />
+          {menuOpen ? "ZAPRI" : "MENI"}
         </button>
       </header>
 
-      {menuOpen && !isDesktop && <MobileMenu onClose={() => setMenuOpen(false)} />}
+      <MobileMenu open={menuOpen && !isDesktop} onClose={closeMenu} />
     </>
   );
 }

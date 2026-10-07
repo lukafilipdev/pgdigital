@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { SERVICES } from "@/content/site";
 import { useInViewOnce } from "@/hooks/useInView";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
 import { ServiceShowcase } from "./ServiceShowcase";
 
@@ -11,6 +12,7 @@ export function Services() {
   const sectionRef = useRef<HTMLElement>(null);
   const revealed = useInViewOnce(sectionRef);
   const [active, setActive] = useState(0);
+  const isDesktop = useMediaQuery("(min-width: 900px)");
 
   return (
     <section
@@ -46,7 +48,7 @@ export function Services() {
         </p>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] items-start gap-[clamp(32px,5vw,80px)]">
+      <div className="grid items-start gap-[clamp(32px,5vw,80px)] nav:grid-cols-2">
         <ul className="flex flex-col border-b border-line">
           {SERVICES.map((service, index) => {
             const isActive = index === active;
@@ -55,7 +57,7 @@ export function Services() {
               <li
                 key={service.name}
                 className={cn(
-                  "transition-[opacity,translate] duration-[900ms,1100ms] ease-smooth",
+                  "scroll-mt-20 transition-[opacity,translate] duration-[900ms,1100ms] ease-smooth",
                   !revealed && "translate-y-[46px] opacity-0",
                 )}
                 style={{ transitionDelay: `${0.15 + index * 0.09}s` }}
@@ -66,7 +68,12 @@ export function Services() {
                   aria-pressed={isActive}
                   onMouseEnter={select}
                   onFocus={select}
-                  onClick={select}
+                  onClick={(event) => {
+                    select();
+                    // On phones the previous item collapses; keep the tapped one in view.
+                    const item = event.currentTarget.parentElement;
+                    if (!isDesktop) requestAnimationFrame(() => item?.scrollIntoView({ behavior: "smooth" }));
+                  }}
                   className="relative grid w-full cursor-pointer grid-cols-[52px_minmax(0,1fr)] gap-x-3 border-t border-line py-[clamp(18px,2.6vh,28px)] text-left"
                 >
                   <span
@@ -99,12 +106,15 @@ export function Services() {
                     )}
                   </span>
                 </button>
+                {isActive && !isDesktop && (
+                  <ServiceShowcase active={index} revealed inline className="mb-6" />
+                )}
               </li>
             );
           })}
         </ul>
 
-        <ServiceShowcase active={active} revealed={revealed} />
+        {isDesktop && <ServiceShowcase active={active} revealed={revealed} />}
       </div>
     </section>
   );

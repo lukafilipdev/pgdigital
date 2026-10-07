@@ -30,11 +30,7 @@ export function ProjectCard({ project, index, onOpen }: ProjectCardProps) {
         data-cursor-label="POGLEJ"
         aria-label={`Odpri projekt ${project.title}`}
         onClick={(event) => onOpen(event.currentTarget.getBoundingClientRect())}
-        className={cn(
-          "relative block h-(--card-h) cursor-pointer overflow-hidden bg-[#111]",
-          "ring-1 ring-white/10 transition-shadow duration-300 hover:ring-brand",
-          phone ? "rounded-2xl" : "rounded-xs",
-        )}
+        className="relative block h-(--card-h) cursor-pointer overflow-hidden rounded-xl bg-[#111] ring-1 ring-white/10 transition-shadow duration-300 hover:ring-brand"
         style={{ width: `calc(var(--card-h) * ${width / height})` }}
       >
         <ImagePlaceholder

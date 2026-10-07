@@ -236,6 +236,8 @@ export function Hero() {
             ref={kickerRef}
             left="PG INŽENIRING"
             right="SPLETNO OBLIKOVANJE IN RAZVOJ"
+            // The logo is right above on phones; one phrase avoids an awkward wrap.
+            leftClassName="max-sm:hidden"
             className="mb-[clamp(20px,3.2vh,36px)] opacity-0"
           />
           <h1
@@ -270,7 +272,7 @@ export function Hero() {
           aria-live="polite"
           className="pointer-events-none absolute inset-x-0 bottom-[clamp(62px,8vh,84px)] mx-auto flex w-[min(92vw,560px)] flex-col items-center gap-2 text-center opacity-0"
         >
-          <div className="flex items-center gap-3 font-mono text-[10.5px] tracking-[.18em] text-muted">
+          <div className="flex items-center gap-3 font-mono text-[11.5px] tracking-[.18em] text-muted nav:text-[10.5px]">
             <span ref={captionIndexRef} className="text-brand">
               01 / 04
             </span>
@@ -279,11 +281,14 @@ export function Hero() {
           </div>
           <div
             ref={captionNameRef}
-            className="text-[clamp(24px,2.4vw,34px)] leading-none font-bold tracking-[-.045em]"
+            className="text-[32px] leading-none font-bold tracking-[-.045em] nav:text-[clamp(24px,2.4vw,34px)]"
           >
             {HERO_LAYERS[0].name}
           </div>
-          <div ref={captionTextRef} className="text-sm leading-[1.4] text-pretty text-subtle">
+          <div
+            ref={captionTextRef}
+            className="text-base leading-[1.4] text-pretty text-subtle nav:text-sm"
+          >
             {HERO_LAYERS[0].description}
           </div>
         </div>
@@ -309,18 +314,18 @@ export function Hero() {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-center justify-between px-[clamp(18px,3vw,40px)] font-mono text-[10px] tracking-[.16em] text-[#6f6f6f] opacity-0"
         >
-          <div className="flex min-w-[120px] gap-[18px]">
+          <div className="flex min-w-[120px] gap-[18px] max-sm:invisible">
             <span ref={coordXRef}>X 0000</span>
             <span ref={coordYRef}>Y 0000</span>
           </div>
           <div
             ref={hintRef}
-            className="absolute bottom-3.5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
+            className="absolute bottom-[68px] left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 sm:bottom-3.5"
           >
             <span>POMAKNI</span>
             <span className="h-[26px] w-px animate-scroll-hint bg-brand motion-reduce:animate-none" />
           </div>
-          <div className="flex min-w-[120px] items-center justify-end gap-3.5">
+          <div className="flex min-w-[120px] items-center justify-end gap-3.5 whitespace-nowrap">
             <span ref={statusRef}>STRUKTURA</span>
             <span className="relative h-px w-12 overflow-hidden bg-line-strong">
               <span

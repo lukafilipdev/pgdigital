@@ -46,6 +46,8 @@ export type StackTextures = {
   scratch: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D };
 };
 
+type PlaneLabel = { text: string; x: number; y: number; alpha: number; active: boolean };
+
 /** Four website layers (code → structure → form → experience) floating in 3D. */
 export class LayerStack {
   private highlight = [0, 0, 0, 0];
@@ -95,6 +97,7 @@ export class LayerStack {
     const offsetX = (W / 2 + (mobile ? 0 : 30) - (current.x0 + current.x1) / 2) * centring;
     const offsetY = ((top + bottom) / 2 - (current.y0 + current.y1) / 2) * centring;
 
+    const labels: PlaneLabel[] = [];
     for (let i = 0; i < 4; i++) {
       this.highlight[i] = approach(this.highlight[i], i === activeLayer && c < 0.01 ? 1 : 0, 0.12);
       const on = this.highlight[i];
@@ -130,29 +133,55 @@ export class LayerStack {
       ctx.stroke();
 
       if (c < 0.5) {
-        const color = on > 0.5 ? BRAND : "rgba(255,255,255,.55)";
-        const label = `0${i + 1}  ${HERO_LAYERS[i].label}`;
-        ctx.font = `10px ${this.fonts.mono}`;
-        ctx.globalAlpha = alpha * (1 - c * 2);
-        ctx.fillStyle = color;
-        ctx.strokeStyle = color;
-        if (mobile) {
-          const [x, y] = pointAt(0, 0);
-          ctx.textAlign = "left";
-          ctx.fillText(label, x, y - 8);
-        } else {
-          const [x, y] = pointAt(0, 0.5);
-          ctx.textAlign = "right";
-          ctx.beginPath();
-          ctx.moveTo(x - 8, y);
-          ctx.lineTo(x - 40, y);
-          ctx.stroke();
-          ctx.fillText(label, x - 48, y + 3.5);
-        }
-        ctx.textAlign = "left";
+        const [x, y] = pointAt(0, mobile ? 0 : 0.5);
+        labels.push({
+          text: `0${i + 1}  ${HERO_LAYERS[i].label}`,
+          x,
+          y,
+          alpha: alpha * (1 - c * 2),
+          active: on > 0.5,
+        });
       }
       ctx.globalAlpha = 1;
     }
+
+    // Labels go on top of every plane, otherwise the plane above hides them.
+    this.drawLabels(ctx, labels, mobile);
+  }
+
+  /**
+   * Desktop: to the left of each plane with a leader line.
+   * Mobile: a small tag on the plane's top-left corner, with a dark backing.
+   */
+  private drawLabels(ctx: CanvasRenderingContext2D, labels: PlaneLabel[], mobile: boolean) {
+    ctx.font = `${mobile ? 11 : 10}px ${this.fonts.mono}`;
+    ctx.lineWidth = 1;
+    for (const { text, x, y, alpha, active } of labels) {
+      const color = active ? BRAND : mobile ? "rgba(255,255,255,.8)" : "rgba(255,255,255,.55)";
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      if (mobile) {
+        const tagW = ctx.measureText(text).width + 14;
+        const tagH = 20;
+        const tagY = y - tagH - 4;
+        ctx.fillStyle = "rgba(0,0,0,.82)";
+        ctx.fillRect(x, tagY, tagW, tagH);
+        if (active) ctx.strokeRect(x + 0.5, tagY + 0.5, tagW - 1, tagH - 1);
+        ctx.fillStyle = color;
+        ctx.textAlign = "left";
+        ctx.fillText(text, x + 7, tagY + 14);
+      } else {
+        ctx.textAlign = "right";
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y);
+        ctx.lineTo(x - 40, y);
+        ctx.stroke();
+        ctx.fillText(text, x - 48, y + 3.5);
+      }
+    }
+    ctx.textAlign = "left";
+    ctx.globalAlpha = 1;
   }
 
   /** Plane 0: column grid plus source code, drawn in the plane's own space. */
