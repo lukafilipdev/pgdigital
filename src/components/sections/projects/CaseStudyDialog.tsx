@@ -2,8 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
-import { PROJECTS, projectScreenshot } from "@/content/site";
+import { PROJECTS } from "@/content/site";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { padNumber } from "@/lib/math";
@@ -81,28 +80,28 @@ export function CaseStudyDialog({ index, origin, onNext, onClose }: CaseStudyDia
       className="fixed inset-0 z-95 overflow-y-auto bg-black transition-[clip-path] duration-750 ease-curtain motion-reduce:transition-none"
       style={{ clipPath: expanded || reducedMotion ? FULLSCREEN : clipFromRect(origin) }}
     >
-      <button
-        ref={closeButtonRef}
-        type="button"
-        onClick={close}
-        data-cursor="link"
-        className="eyebrow fixed top-3.5 right-[clamp(18px,3vw,40px)] z-2 h-10 cursor-pointer rounded-full border border-white/30 bg-black/60 px-[18px] text-white backdrop-blur-[10px]"
-      >
-        ZAPRI ×
-      </button>
+      <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-white/[0.08] bg-black/85 px-[clamp(18px,3vw,40px)] backdrop-blur-md">
+        <span className="eyebrow flex items-center gap-3 text-muted">
+          <span className="text-brand">
+            {padNumber(index + 1, 2)} / {padNumber(PROJECTS.length, 2)}
+          </span>
+          <span aria-hidden className="h-px w-5 bg-edge" />
+          <span className="text-white">{project.title}</span>
+        </span>
+        <button
+          ref={closeButtonRef}
+          type="button"
+          onClick={close}
+          data-cursor="link"
+          className="eyebrow h-10 shrink-0 cursor-pointer rounded-full border border-white/25 bg-black/70 px-[18px] whitespace-nowrap text-white transition-colors hover:border-brand hover:text-brand"
+        >
+          ZAPRI ×
+        </button>
+      </div>
 
-      {project.embeddable ? (
-        <div className="h-[86vh] px-[clamp(18px,3vw,40px)] pt-16 pb-6">
-          <LivePreview key={project.slug} project={project} />
-        </div>
-      ) : (
-        <div className="relative h-[78vh] bg-[#111]">
-          <ImagePlaceholder
-            label={`Spletna stran ${project.title}`}
-            src={projectScreenshot(project.slug, "cover")}
-          />
-        </div>
-      )}
+      <div className="h-[min(78vh,740px)] min-h-[420px] px-[clamp(18px,3vw,40px)] pt-5 pb-4">
+        <LivePreview key={project.slug} project={project} />
+      </div>
 
       <div className="flex flex-col gap-[clamp(36px,6vh,64px)] px-[clamp(18px,3vw,40px)] pt-[clamp(40px,8vh,90px)] pb-[120px]">
         <div className="eyebrow flex flex-wrap gap-3.5 text-muted">

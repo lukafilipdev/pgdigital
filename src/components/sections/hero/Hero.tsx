@@ -5,6 +5,7 @@ import { useIntro } from "@/components/intro/IntroProvider";
 import { Kicker } from "@/components/ui/Kicker";
 import { HERO_LAYERS } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
+import { useInViewport } from "@/hooks/useInView";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
 import { usePointer } from "@/hooks/usePointer";
 import { approach, clamp, easeOutQuart, padNumber, smoothstep } from "@/lib/math";
@@ -12,6 +13,8 @@ import { getPinProgress } from "@/lib/scroll";
 import { HeroScene, type HeroPhases } from "./engine/HeroScene";
 import type { LensState } from "./engine/lens";
 import { resolveCanvasFonts } from "./engine/pen";
+import { HeroLayerStack, type HeroLayerStackHandle } from "./HeroLayerStack";
+import { OriginStage, type OriginStageHandle } from "./OriginStage";
 
 const HEADLINE: ReactNode[] = [
   "Spletna stran,",
@@ -20,6 +23,29 @@ const HEADLINE: ReactNode[] = [
     znamka <span className="text-brand">zasluži.</span>
   </>,
 ];
+
+/**
+ * Scroll timeline of the pinned hero, as fractions of its pinned distance.
+ *
+ *  message → deconstruction → koda → struktura → oblika → izkušnja
+ *  → merge → result (hold) → origin statement
+ */
+const TIMELINE = {
+  /** Headline separates; its baselines become guides; the mesh lies down. */
+  open: [0.02, 0.15],
+  /** When each layer starts landing on the stack. */
+  layers: [0.12, 0.26, 0.39, 0.52],
+  /** How long a layer takes to land. */
+  arrival: 0.06,
+  /** Code is typed into the first layer. */
+  code: [0.14, 0.24],
+  /** Layers align, merge and the site turns to face the viewer. */
+  merge: [0.65, 0.75],
+  /** The site lays down into the floor of the closing scene. */
+  outro: [0.82, 0.89],
+  /** Buildings turn from physical into digital structures. */
+  digitize: [0.88, 0.97],
+} as const;
 
 /** After this long without pointer movement the lens starts wandering. */
 const IDLE_AFTER_MS = 4500;
@@ -30,11 +56,18 @@ type Simulation = {
   mouse: { x: number; y: number };
   lens: LensState;
   pulse: number;
+  /** Layer whose caption is shown. */
+  captionLayer: number;
+  /** Baseline of each headline line, relative to the stage (cached on resize). */
+  baselines: number[];
 };
 
+const range = (P: number, [from, to]: readonly [number, number]) => smoothstep(from, to, P);
+
 /**
- * Pinned, scroll-driven hero: a lens reveals a website and its code, the page
- * then separates into four layers and finally settles into a closing statement.
+ * Pinned, scroll-driven hero: a lens reveals the code under the headline,
+ * then a website is built layer by layer, merges into the finished site and
+ * hands over to the closing statement about PG's origin.
  */
 export function Hero() {
   const { startedAt: introStartedAt } = useIntro();
@@ -45,28 +78,35 @@ export function Hero() {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const lineInnerRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const ruleRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const captionRef = useRef<HTMLDivElement>(null);
   const captionIndexRef = useRef<HTMLSpanElement>(null);
+  const captionSpecRef = useRef<HTMLSpanElement>(null);
   const captionNameRef = useRef<HTMLDivElement>(null);
   const captionTextRef = useRef<HTMLDivElement>(null);
-  const statementRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
-  const coordXRef = useRef<HTMLSpanElement>(null);
-  const coordYRef = useRef<HTMLSpanElement>(null);
+  const xrayLabelRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLSpanElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
   const percentRef = useRef<HTMLSpanElement>(null);
 
+  const visible = useInViewport(sectionRef);
   const sceneRef = useRef<HeroScene | null>(null);
+  const layerStackRef = useRef<HeroLayerStackHandle>(null);
+  const originStageRef = useRef<OriginStageHandle>(null);
   const sim = useRef<Simulation>({
     startedAt: null,
     progress: 0,
     mouse: { x: 0, y: 0 },
     lens: { x: 0, y: 0, vx: 0, vy: 0 },
     pulse: 0,
+    captionLayer: -1,
+    baselines: [],
   });
 
   useEffect(() => {
@@ -74,7 +114,17 @@ export function Hero() {
     const scene = new HeroScene(canvasRef.current!, resolveCanvasFonts());
     sceneRef.current = scene;
 
-    const resize = () => scene.resize(stage.clientWidth, stage.clientHeight);
+    const measureBaselines = () => {
+      sim.current.baselines = lineRefs.current.map((line) => {
+        if (!line) return 0;
+        const fontSize = parseFloat(getComputedStyle(line).fontSize);
+        return line.offsetTop + line.offsetHeight - fontSize * 0.17;
+      });
+    };
+    const resize = () => {
+      scene.resize(stage.clientWidth, stage.clientHeight);
+      measureBaselines();
+    };
     resize();
     Object.assign(sim.current.lens, { x: scene.width / 2, y: scene.height / 2 });
 
@@ -82,7 +132,12 @@ export function Hero() {
     observer.observe(stage);
 
     let disposed = false;
-    document.fonts.ready.then(() => !disposed && scene.refreshTextures());
+    document.fonts.ready.then(() => {
+      if (disposed) return;
+      scene.refreshTextures();
+      layerStackRef.current?.refreshTextures();
+      measureBaselines();
+    });
 
     const onPointerDown = () => (sim.current.pulse = 1);
     window.addEventListener("pointerdown", onPointerDown, { passive: true });
@@ -111,29 +166,42 @@ export function Hero() {
     const target = getPinProgress(section);
     s.progress = reducedMotion ? target : approach(s.progress, target, 0.09);
     const P = s.progress;
+
+    const layers = TIMELINE.layers.map((start) => smoothstep(start, start + TIMELINE.arrival, P));
     const phases: HeroPhases = {
-      open: smoothstep(0, 0.2, P),
-      assemble: smoothstep(0.16, 0.38, P),
-      collapse: smoothstep(0.74, 0.9, P),
-      outro: smoothstep(0.84, 0.96, P),
+      open: range(P, TIMELINE.open),
+      layers,
+      build: smoothstep(TIMELINE.layers[0], TIMELINE.merge[0], P),
+      code: range(P, TIMELINE.code),
+      merge: range(P, TIMELINE.merge),
+      outro: range(P, TIMELINE.outro),
+      digitize: range(P, TIMELINE.digitize),
     };
-    const { open, collapse, outro } = phases;
+    const { open, outro } = phases;
+
+    let activeLayer = -1;
+    if (P < TIMELINE.merge[0]) {
+      TIMELINE.layers.forEach((start, i) => {
+        if (P >= start + TIMELINE.arrival * 0.5) activeLayer = i;
+      });
+    }
 
     s.mouse.x = approach(s.mouse.x, (pointer.x / window.innerWidth) * 2 - 1, 0.05);
     s.mouse.y = approach(s.mouse.y, (pointer.y / window.innerHeight) * 2 - 1, 0.05);
 
     // Lens follows the pointer, or wanders on its own when idle.
     const cx = W / 2;
-    const cy = H / 2;
+    const cy = H * 0.5;
     const idle = now - pointer.lastMoveAt > IDLE_AFTER_MS;
     let targetX = cx;
     let targetY = cy;
-    if (pointer.active && !idle) {
+    if (pointer.active && !idle && !scene.mobile) {
       targetX = pointer.x;
       targetY = pointer.y - stage.getBoundingClientRect().top;
     } else if (!reducedMotion) {
-      targetX = cx + W * (scene.mobile ? 0.2 : 0.24) * Math.sin(t * 0.31);
-      targetY = cy + H * 0.16 * Math.sin(t * 0.47 + 1.2);
+      // Phones always follow this orbit, independently of touch/scroll events.
+      targetX = cx + W * 0.24 * Math.sin(t * (scene.mobile ? 0.5 : 0.31));
+      targetY = cy + H * (scene.mobile ? 0.16 : 0.11) * Math.sin(t * (scene.mobile ? 0.37 : 0.47) + 1.2);
     }
     const lens = s.lens;
     const prevX = lens.x;
@@ -147,82 +215,119 @@ export function Hero() {
     const grow = reducedMotion ? 1 : introT < 0 ? 0 : easeOutQuart((introT + 0.25) / 1.6);
     const breathe = reducedMotion ? 1 : 1 + 0.035 * Math.sin(t * 1.1);
     const lensRadius =
-      Math.min(W, H) * (scene.mobile ? 0.3 : 0.25) * grow * breathe * (1 - open) * (1 + s.pulse * 0.22);
+      (scene.mobile ? Math.min(W * 0.25, H * 0.14) : Math.min(W, H) * 0.25) * grow * breathe * (1 - open) * (1 + s.pulse * 0.22);
 
-    const activeLayer =
-      collapse > 0 ? 3 : P < 0.4 ? -1 : Math.min(3, Math.floor((P - 0.4) / 0.085));
+    scene.render({
+      t,
+      phases,
+      lens,
+      lensRadius,
+      mouse: s.mouse,
+      pointer,
+      activeLayer,
+      reducedMotion,
+    });
 
-    if (window.scrollY < section.offsetTop + section.offsetHeight) {
-      scene.render({
-        t,
-        progress: P,
-        phases,
-        lens,
-        lensRadius,
-        mouse: s.mouse,
-        pointer,
-        activeLayer,
-        reducedMotion,
-      });
-    }
+    layerStackRef.current?.update({
+      t,
+      phases,
+      mouse: s.mouse,
+      activeLayer,
+      width: W,
+      height: H,
+      mobile: scene.mobile,
+      reducedMotion,
+    });
 
-    // Headline: staggered reveal, mouse parallax, velocity skew, then split apart.
-    const motion = reducedMotion ? 0 : 1;
-    const skew = clamp(lens.vx * 0.04, -2, 2) * (1 - open);
-    const headlineOpacity = String(1 - smoothstep(0.06, 0.19, P));
+    // Headline: staggered reveal, mouse parallax, velocity skew, then split
+    // apart — its baselines stay behind as guides that dissolve into the grid.
+    const motion = reducedMotion || scene.mobile ? 0 : 1;
+    const skew = clamp(lens.vx * 0.04, -2, 2) * (1 - open) * motion;
+    const headlineOpacity = String(1 - smoothstep(0.05, 0.13, P));
+    const ruleGrow = smoothstep(0.015, 0.08, P);
+    const ruleOpacity = String(clamp(ruleGrow * 3) * (1 - smoothstep(0.1, 0.17, P)));
     for (let i = 0; i < HEADLINE.length; i++) {
       const line = lineRefs.current[i];
       const inner = lineInnerRefs.current[i];
+      const rule = ruleRefs.current[i];
       if (!line || !inner) continue;
       const reveal = reducedMotion ? 1 : easeOutQuart((introT - 0.15 - i * 0.09) / 1.1);
       const depth = 6 + i * 5;
-      const spread = (i - 1) * open * H * 0.3;
+      const offsetY = (i - 1) * open * H * 0.3 - s.mouse.y * depth * 0.6 * motion;
       inner.style.transform = `translate3d(0,${(1 - reveal) * 112}%,0)`;
       line.style.transform =
-        `translate3d(${-s.mouse.x * depth * motion}px,${spread - s.mouse.y * depth * 0.6 * motion}px,0) ` +
+        `translate3d(${-s.mouse.x * depth * motion}px,${offsetY}px,0) ` +
         `skewX(${-skew}deg) scale(${1 - open * (i === 1 ? 0.06 : 0)})`;
       line.style.opacity = headlineOpacity;
+      if (rule) {
+        rule.style.transform = `translate3d(0,${(s.baselines[i] ?? 0) + offsetY}px,0) scaleX(${ruleGrow})`;
+        rule.style.opacity = ruleOpacity;
+      }
     }
 
     const introElapsed = Math.max(0, introT);
-    setStyle(kickerRef, "opacity", smoothstep(0.5, 1.3, introElapsed) * (1 - smoothstep(0, 0.08, P)));
-    setStyle(metaRef, "opacity", smoothstep(0.9, 1.6, introElapsed) * (1 - outro));
-    setStyle(hintRef, "opacity", 1 - smoothstep(0.01, 0.08, P));
+    const introIn = (from: number, to: number) => (reducedMotion ? 1 : smoothstep(from, to, introElapsed));
+    setStyle(kickerRef, "opacity", introIn(0.5, 1.3) * (1 - smoothstep(0, 0.06, P)));
+    const description = introIn(1, 1.8);
+    setStyle(descriptionRef, "opacity", description * (1 - smoothstep(0.015, 0.06, P)));
+    setStyle(descriptionRef, "transform", `translate3d(0,${(1 - description) * 10}px,0)`);
+    setStyle(metaRef, "opacity", introIn(0.9, 1.6) * (1 - outro));
+    setStyle(hintRef, "opacity", 1 - smoothstep(0.01, 0.06, P));
+    setStyle(xrayLabelRef, "opacity", introIn(0.5, 1.3) * (1 - smoothstep(0, 0.1, P)));
 
-    // HUD readouts
-    setText(coordXRef, `X ${padNumber(lens.x)}`);
-    setText(coordYRef, `Y ${padNumber(lens.y)}`);
+    // Progress readout
     setText(percentRef, padNumber(P * 100, 3));
     if (barRef.current) barRef.current.style.transform = `scaleX(${P})`;
-
     const status =
-      P < 0.16
-        ? lensRadius > 1 ? "STRUKTURA / OBLIKA" : ""
-        : activeLayer < 0 ? "SESTAVLJANJE" : HERO_LAYERS[activeLayer].label;
+      P >= TIMELINE.outro[0]
+        ? "IZVOR"
+        : P >= TIMELINE.merge[0]
+          ? "REZULTAT"
+          : activeLayer >= 0
+            ? HERO_LAYERS[activeLayer].label
+            : lensRadius > 1
+              ? "POD POVRŠJEM"
+              : "";
     setText(statusRef, status);
 
-    // Layer caption (keeps showing the last layer while fading out)
-    if (activeLayer >= 0) {
+    // Layer caption: each new layer's name slides in from below.
+    if (activeLayer >= 0 && activeLayer !== s.captionLayer) {
       const layer = HERO_LAYERS[activeLayer];
       setText(captionIndexRef, `0${activeLayer + 1} / 0${HERO_LAYERS.length}`);
+      setText(captionSpecRef, layer.spec);
       setText(captionNameRef, layer.name);
       setText(captionTextRef, layer.description);
+      const direction = activeLayer > s.captionLayer ? "animate-slide-in-up" : "animate-slide-in-down";
+      if (s.captionLayer >= 0 && !reducedMotion) restartAnimation(captionNameRef.current, direction);
+      s.captionLayer = activeLayer;
     }
-    const captionOpacity = smoothstep(0.37, 0.42, P) * (1 - smoothstep(0.72, 0.78, P));
+    const captionStart = TIMELINE.layers[0] + TIMELINE.arrival * 0.5;
+    const captionOpacity = smoothstep(captionStart, captionStart + 0.03, P) * (1 - smoothstep(TIMELINE.merge[0], TIMELINE.merge[0] + 0.03, P));
     setStyle(captionRef, "opacity", captionOpacity);
     setStyle(captionRef, "transform", `translate3d(0,${(1 - captionOpacity) * 14}px,0)`);
-    setStyle(statementRef, "opacity", outro);
-    setStyle(statementRef, "transform", `translate3d(0,${(1 - outro) * 30}px,0)`);
+
+    // The finished site gets a quiet moment, labelled once.
+    const result = smoothstep(TIMELINE.merge[1] - 0.02, TIMELINE.merge[1] + 0.02, P) * (1 - smoothstep(TIMELINE.outro[0], TIMELINE.outro[0] + 0.025, P));
+    setStyle(resultRef, "opacity", result);
+
+    // Closing "O nas" showcase: monumental headline + architectural scale models.
+    originStageRef.current?.update({
+      progress: P,
+      outro,
+      digitize: phases.digitize,
+      mouseX: s.mouse.x,
+      reducedMotion,
+    });
 
     // Label for the custom cursor while hovering the stage.
-    const cursorLabel = P < 0.16 ? "RAZIŠČI" : P < 0.74 ? "VRTI" : "";
+    const cursorLabel = P < 0.06 ? "RAZIŠČI" : activeLayer === 3 ? "VRTI" : "";
     if (stage.dataset.cursorLabel !== cursorLabel) stage.dataset.cursorLabel = cursorLabel;
-  });
+  }, visible);
 
   return (
-    <section id="domov" ref={sectionRef} aria-label="Uvod" className="relative h-[520vh]">
+    <section id="domov" ref={sectionRef} aria-label="Uvod" className="relative h-[440vh]">
       {/* "O nas" anchor: lands on the closing statement of the hero. */}
-      <div id="o-nas" aria-hidden className="pointer-events-none absolute top-[392vh] left-0 size-px" />
+      <div id="o-nas" aria-hidden className="pointer-events-none absolute top-[330vh] left-0 size-px" />
 
       <div
         ref={stageRef}
@@ -230,17 +335,35 @@ export function Hero() {
         className="sticky top-0 h-svh touch-pan-y overflow-hidden bg-black"
       >
         <canvas ref={canvasRef} aria-hidden className="absolute inset-0 block size-full" />
+        <HeroLayerStack ref={layerStackRef} />
 
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4">
+        <div className="hero-intro pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4">
+          <div aria-hidden className="absolute inset-x-0 top-0">
+            {HEADLINE.map((_, i) => (
+              <span
+                key={i}
+                ref={(el) => {
+                  ruleRefs.current[i] = el;
+                }}
+                className={
+                  "absolute inset-x-0 top-0 h-px opacity-0 " +
+                  (i === HEADLINE.length - 1
+                    ? "bg-[linear-gradient(90deg,transparent,rgba(245,117,30,.55)_30%,rgba(245,117,30,.55)_70%,transparent)]"
+                    : "bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.2)_25%,rgba(255,255,255,.2)_75%,transparent)]")
+                }
+                style={{ transform: "scaleX(0)" }}
+              />
+            ))}
+          </div>
           <Kicker
             ref={kickerRef}
-            left="PG INŽENIRING"
+            left="PG INŽENIRING / DIGITALNI STUDIO"
             right="SPLETNO OBLIKOVANJE IN RAZVOJ"
-            className="mb-[clamp(20px,3.2vh,36px)] opacity-0"
+            className="hero-kicker mb-[clamp(20px,3.2vh,36px)] rounded-md bg-black/72 px-4 py-1.5 text-white/95 opacity-0 backdrop-blur-[6px] sm:rounded-full"
           />
           <h1
             aria-label="Spletna stran, ki si jo vaša znamka zasluži."
-            className="text-center text-[clamp(44px,8.4vw,168px)] leading-[.93] font-bold tracking-[-.058em]"
+            className="text-center text-[clamp(44px,8.4vw,168px)] leading-[.92] font-extrabold tracking-[-.048em] drop-shadow-[0_4px_26px_rgba(0,0,0,0.96)]"
           >
             {HEADLINE.map((line, i) => (
               <span
@@ -263,73 +386,77 @@ export function Hero() {
               </span>
             ))}
           </h1>
+          <p
+            ref={descriptionRef}
+            className="hero-description mt-[clamp(18px,3vh,34px)] max-w-[560px] rounded-md bg-black/72 px-5 py-2 text-center text-[15.5px] leading-normal font-medium text-pretty text-white/95 opacity-0 backdrop-blur-[6px] sm:rounded-full"
+          >
+            Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati.
+          </p>
+        </div>
+
+        <div ref={xrayLabelRef} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[12%] text-center font-mono text-[10px] tracking-[.2em] text-brand opacity-0 nav:hidden">
+          POD POVRŠJEM / KODA
         </div>
 
         <div
           ref={captionRef}
           aria-live="polite"
-          className="pointer-events-none absolute inset-x-0 bottom-[clamp(62px,8vh,84px)] mx-auto flex w-[min(92vw,560px)] flex-col items-center gap-2 text-center opacity-0"
+          className="pointer-events-none absolute inset-x-0 bottom-[max(62px,env(safe-area-inset-bottom))] mx-auto flex w-[min(92vw,560px)] flex-col items-center gap-2 border-t border-brand/40 bg-black/95 px-4 py-4 text-center opacity-0 nav:bottom-[clamp(62px,8vh,84px)] nav:border-0 nav:bg-transparent nav:p-0"
         >
-          <div className="flex items-center gap-3 font-mono text-[10.5px] tracking-[.18em] text-muted">
-            <span ref={captionIndexRef} className="text-brand">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[.16em] text-subtle">
+            <span ref={captionIndexRef} className="whitespace-nowrap text-brand">
               01 / 04
             </span>
-            <span aria-hidden className="h-px w-6 bg-edge" />
-            <span>PLASTI SPLETNE STRANI</span>
+            <span aria-hidden className="hidden h-px w-6 bg-edge nav:block" />
+            <span ref={captionSpecRef} className="whitespace-nowrap">
+              {HERO_LAYERS[0].spec}
+            </span>
           </div>
-          <div
-            ref={captionNameRef}
-            className="text-[clamp(24px,2.4vw,34px)] leading-none font-bold tracking-[-.045em]"
-          >
-            {HERO_LAYERS[0].name}
+          <div className="overflow-hidden pb-[.08em]">
+            <div
+              ref={captionNameRef}
+              className="text-[clamp(26px,2.5vw,36px)] leading-none font-bold tracking-[-.045em] motion-reduce:animate-none"
+            >
+              {HERO_LAYERS[0].name}
+            </div>
           </div>
-          <div ref={captionTextRef} className="text-sm leading-[1.4] text-pretty text-subtle">
+          <div ref={captionTextRef} className="text-sm leading-[1.4] text-pretty text-soft">
             {HERO_LAYERS[0].description}
           </div>
         </div>
 
         <div
-          ref={statementRef}
-          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-[22px] text-center opacity-0"
+          ref={resultRef}
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-[max(62px,env(safe-area-inset-bottom))] flex justify-center opacity-0 nav:bottom-[clamp(56px,7vh,76px)]"
         >
-          <Kicker left="IZVOR" right="PG INŽENIRING" className="mb-7" />
-          <p className="text-[clamp(34px,5.6vw,104px)] leading-[.98] font-bold tracking-[-.055em] text-balance">
-            Gradimo v fizičnem svetu.
-            <br />
-            Zdaj gradimo tudi <span className="text-brand">digitalno.</span>
-          </p>
-          <p className="mt-[30px] max-w-[460px] text-base leading-normal text-pretty text-subtle">
-            Ista natančnost pri načrtovanju, isti sistemi pri izvedbi in ista odgovornost za
-            rezultat — prevedeni v splet.
-          </p>
+          <Kicker left="REZULTAT" right="ŠTIRI PLASTI · EN SISTEM" />
         </div>
+
+        <OriginStage ref={originStageRef} />
 
         <div
           ref={metaRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-center justify-between px-[clamp(18px,3vw,40px)] font-mono text-[10px] tracking-[.16em] text-[#6f6f6f] opacity-0"
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-center justify-between px-[clamp(18px,3vw,40px)] font-mono text-[10.5px] tracking-[.16em] text-subtle opacity-0"
         >
-          <div className="flex min-w-[120px] gap-[18px]">
-            <span ref={coordXRef}>X 0000</span>
-            <span ref={coordYRef}>Y 0000</span>
-          </div>
           <div
             ref={hintRef}
             className="absolute bottom-3.5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
           >
-            <span>POMAKNI</span>
+            <span className="text-soft">POMAKNI</span>
             <span className="h-[26px] w-px animate-scroll-hint bg-brand motion-reduce:animate-none" />
           </div>
-          <div className="flex min-w-[120px] items-center justify-end gap-3.5">
-            <span ref={statusRef}>STRUKTURA</span>
-            <span className="relative h-px w-12 overflow-hidden bg-line-strong">
+          <div className="ml-auto flex items-center justify-end gap-2 nav:gap-3.5">
+            <span ref={statusRef} className="hidden text-soft nav:inline" />
+            <span className="relative h-px w-6 overflow-hidden bg-line-strong nav:w-12">
               <span
                 ref={barRef}
                 className="absolute inset-0 origin-left bg-brand"
                 style={{ transform: "scaleX(0)" }}
               />
             </span>
-            <span ref={percentRef} className="text-[#bdbdbd]">
+            <span ref={percentRef} className="text-white/85 tabular-nums">
               000
             </span>
           </div>
@@ -350,4 +477,12 @@ function setStyle(
   value: number | string,
 ) {
   if (ref.current) ref.current.style[property] = String(value);
+}
+
+/** Replays a one-shot CSS animation (forces a single reflow). */
+function restartAnimation(element: HTMLElement | null, className: string) {
+  if (!element) return;
+  element.classList.remove("animate-slide-in-up", "animate-slide-in-down");
+  void element.offsetWidth;
+  element.classList.add(className);
 }

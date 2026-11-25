@@ -1,39 +1,88 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { cn } from "@/lib/cn";
 
-const SIZES = ["S", "M", "L"];
-const SELECTED_SIZE = "M";
+const SIZES = ["S", "M", "L"] as const;
 
-/** E-commerce: a product detail card. */
+/** E-commerce: an interactive dark-studio product detail card with live cart state. */
 export function ShopSlide() {
+  const [selectedSize, setSelectedSize] = useState<(typeof SIZES)[number]>("M");
+  const [cartCount, setCartCount] = useState(0);
+  const [justAdded, setJustAdded] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  const handleAdd = () => {
+    setCartCount((c) => c + 1);
+    setJustAdded(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setJustAdded(false), 2400);
+  };
+
   return (
-    <div className="grid size-full grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] items-center gap-[6%]">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-[#141414]">
-        <ImagePlaceholder label="Fotografija izdelka" sizes="(min-width: 900px) 25vw, 50vw" />
+    <div className="grid size-full grid-cols-[minmax(0,0.92fr)_minmax(0,1.12fr)] items-center gap-[5%] sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] sm:gap-[6%]">
+      <div className="relative aspect-[4/5] max-h-[215px] w-full justify-self-center overflow-hidden rounded-sm border border-white/10 bg-[#0d0d10] sm:max-h-none">
+        <ImagePlaceholder
+          label="Tehnična srajčna jakna — mat črna"
+          src="/images/services/ecommerce-product.jpg"
+          sizes="(min-width: 900px) 25vw, 50vw"
+        />
+        <span className="eyebrow-sm pointer-events-none absolute top-2 left-2 rounded-xs bg-black/75 px-2 py-0.5 text-white/90 backdrop-blur-xs sm:top-2.5 sm:left-2.5 sm:py-1">
+          NA ZALOGI
+        </span>
       </div>
-      <div className="flex flex-col gap-3.5">
-        <div className="eyebrow text-muted">E-TRGOVINA · IZDELEK</div>
-        <div className="text-[clamp(22px,2.2vw,34px)] leading-none font-bold tracking-[-.04em]">
+      <div className="flex min-w-0 flex-col gap-2 sm:gap-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <span className="eyebrow-sm whitespace-nowrap text-muted sm:eyebrow">E-TRGOVINA</span>
+          {cartCount > 0 && (
+            <span
+              role="status"
+              className="eyebrow-sm whitespace-nowrap rounded-full bg-brand/15 px-2 py-0.5 text-brand tabular-nums"
+            >
+              KOŠARICA ({cartCount})
+            </span>
+          )}
+        </div>
+        <div className="text-[clamp(20px,2.2vw,34px)] leading-none font-bold tracking-[-.04em]">
           Vaš izdelek
         </div>
-        <div className="text-[clamp(18px,1.6vw,24px)] font-semibold">129,00 €</div>
-        <div className="flex gap-2">
+        <div className="text-[clamp(16px,1.6vw,24px)] font-semibold tabular-nums">129,00 €</div>
+        <div className="flex gap-1.5 sm:gap-2" role="group" aria-label="Velikost">
           {SIZES.map((size) => (
-            <span
+            <button
               key={size}
+              type="button"
+              data-cursor="link"
+              aria-pressed={size === selectedSize}
+              onClick={() => setSelectedSize(size)}
               className={cn(
-                "eyebrow px-2.5 py-2",
-                size === SELECTED_SIZE ? "bg-white text-black" : "border border-edge text-white",
+                "eyebrow-sm cursor-pointer px-2.5 py-1.5 transition-colors duration-200 sm:eyebrow sm:py-2",
+                size === selectedSize
+                  ? "bg-white text-black"
+                  : "border border-edge text-white hover:border-white/50",
               )}
             >
               {size}
-            </span>
+            </button>
           ))}
         </div>
-        <div className="eyebrow flex h-[46px] items-center justify-center rounded-full bg-brand text-black">
-          V KOŠARICO →
+        <button
+          type="button"
+          data-cursor="link"
+          onClick={handleAdd}
+          className={cn(
+            "eyebrow-sm flex h-[40px] cursor-pointer items-center justify-center rounded-full font-bold transition-colors duration-300 sm:eyebrow sm:h-[46px]",
+            justAdded ? "bg-white text-black" : "bg-brand text-black hover:bg-brand-light",
+          )}
+        >
+          {justAdded ? `DODANO (${selectedSize}) ✓` : "V KOŠARICO →"}
+        </button>
+        <div className="font-mono text-[9px] font-semibold tracking-[.11em] text-muted sm:eyebrow-sm sm:whitespace-nowrap">
+          PLAČILO · DOSTAVA · ZALOGA
         </div>
-        <div className="eyebrow-sm text-muted">PLAČILO · DOSTAVA · ZALOGA V ŽIVO</div>
       </div>
     </div>
   );

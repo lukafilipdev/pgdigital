@@ -61,14 +61,14 @@ export function ServiceShowcase({ active, revealed }: ServiceShowcaseProps) {
   return (
     <div
       className={cn(
-        "sticky top-[max(96px,calc(50vh-270px))] perspective-[1400px]",
+        "perspective-[1400px] nav:sticky nav:top-24 nav:mx-auto nav:w-full nav:max-w-[min(580px,66vh)]",
         "transition-[opacity,translate] delay-300 duration-[1000ms,1200ms] ease-smooth",
         !revealed && "translate-y-[60px] opacity-0",
       )}
     >
       <div
         ref={panelRef}
-        className="relative aspect-[4/3.1] max-h-[calc(100vh-150px)] overflow-hidden rounded-sm border border-line bg-[#070707] will-change-transform"
+        className="relative aspect-[4/3.1] min-h-[250px] max-h-[calc(100vh-150px)] overflow-hidden rounded-md border border-ink/15 bg-[#0e0e11] text-white shadow-[0_24px_64px_rgba(11,11,12,0.18)] will-change-transform nav:min-h-[310px] nav:shadow-[0_32px_80px_rgba(11,11,12,0.22)]"
       >
         <div
           ref={glowRef}
@@ -99,7 +99,7 @@ function ShowcaseSlide({ active, children }: { active: boolean; children: ReactN
       aria-hidden={!active}
       inert={!active}
       className={cn(
-        "absolute inset-0 p-[8%]",
+        "absolute inset-0 p-[8%] nav:p-[6%]",
         "transition-[opacity,translate,scale,filter] duration-[600ms,900ms,900ms,600ms] ease-smooth",
         !active && "translate-y-7 scale-96 opacity-0 blur-sm",
       )}

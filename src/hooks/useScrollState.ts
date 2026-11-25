@@ -42,3 +42,17 @@ export function useActiveSection(ids: readonly string[], offset = 0.45) {
 
   return useSyncExternalStore(subscribeToScroll, getSnapshot, () => ids[0]);
 }
+
+/** Returns "light" when a `[data-theme="light"]` section sits behind the fixed header. */
+export function useHeaderTone(): "dark" | "light" {
+  const getSnapshot = useCallback((): "dark" | "light" => {
+    const sections = document.querySelectorAll<HTMLElement>('[data-theme="light"]');
+    for (const section of sections) {
+      const rect = section.getBoundingClientRect();
+      if (rect.top <= 48 && rect.bottom > 48) return "light";
+    }
+    return "dark";
+  }, []);
+
+  return useSyncExternalStore(subscribeToScroll, getSnapshot, () => "dark");
+}

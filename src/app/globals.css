@@ -17,10 +17,21 @@
   --color-line-soft: #151515;
   --color-placeholder: #5c5c5c;
 
+  /* Warm Architectural Stone (light chapters) */
+  --color-paper: #f4f1ec;
+  --color-paper-soft: #eae5dd;
+  --color-ink: #0b0b0c;
+  --color-ink-soft: #3a3835;
+  --color-ink-muted: #66635e;
+  --color-ink-line: rgba(11, 11, 12, 0.12);
+  --color-ink-line-strong: rgba(11, 11, 12, 0.24);
+
   --breakpoint-nav: 56.25rem; /* 900px — desktop navigation */
 
+  /* Motion: camera-like deceleration, and a weighted in-out for mechanisms. */
   --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-curtain: cubic-bezier(0.75, 0, 0.2, 1);
+  --ease-machine: cubic-bezier(0.65, 0, 0.35, 1);
 
   --animate-scroll-hint: scroll-hint 2.2s cubic-bezier(0.6, 0, 0.2, 1) infinite;
   --animate-slide-in-up: slide-in-up 0.7s var(--ease-smooth);
@@ -59,32 +70,47 @@
 }
 
 @theme inline {
+  --font-display: var(--font-bricolage), var(--font-geist-sans), system-ui, sans-serif;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-/* Small uppercase monospace labels used throughout the site. */
+/*
+ * Type roles: Bricolage Grotesque (extrabold, sculptural, tight) for bold statements
+ * and navigation, Geist for crisp reading, and Geist Mono only for technical data.
+ */
 @utility eyebrow {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
 }
 
 @utility eyebrow-sm {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
 }
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
   }
 
   body {
     @apply overflow-x-hidden bg-black font-sans text-white antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
   }
 
   ::selection {
@@ -108,4 +134,40 @@
       scroll-behavior: auto;
     }
   }
+}
+
+/* Keep the mobile headline centered, with supporting labels clear of it. */
+@media (width < 56.25rem) {
+  .hero-intro {
+    inset-block: 0;
+    align-items: center;
+    padding-inline: 22px;
+  }
+
+  .hero-kicker {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 10px;
+    max-width: 300px;
+    margin-bottom: 22px;
+    font-size: 9.5px;
+    text-align: center;
+  }
+
+  .hero-description {
+    max-width: 300px;
+    font-size: 14px;
+  }
+
+  .hero-intro h1 {
+    text-align: center;
+    font-size: clamp(38px, 10.5vw, 72px);
+    line-height: 1;
+  }
+}
+
+@media (width < 56.25rem) and (height < 500px) {
+  .hero-kicker { margin-bottom: 12px; }
+  .hero-intro h1 { font-size: 28px; }
+  .hero-description { display: none; }
 }

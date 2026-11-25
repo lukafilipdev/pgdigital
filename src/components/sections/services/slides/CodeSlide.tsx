@@ -65,8 +65,8 @@ function RevealLine({ active, index, className, style, children }: RevealLinePro
 /** Web development: a component that types itself in, line by line. */
 export function CodeSlide({ active }: { active: boolean }) {
   return (
-    <div className="flex size-full flex-col gap-1.5 font-mono text-[clamp(11px,1vw,14px)] leading-[1.7] text-muted">
-      <div className="eyebrow mb-3.5">STRUKTURA · KOMPONENTE</div>
+    <div className="flex size-full flex-col gap-1 font-mono text-[11px] leading-[1.48] text-muted nav:gap-1.5 nav:text-[clamp(11px,1vw,14px)] nav:leading-[1.7]">
+      <div className="eyebrow-sm mb-1.5 nav:eyebrow nav:mb-3.5">STRUKTURA · KOMPONENTE</div>
       {LINES.map(({ indent, bright, content }, index) => (
         <RevealLine
           key={index}

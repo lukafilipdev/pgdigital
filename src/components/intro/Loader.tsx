@@ -54,7 +54,7 @@ export function Loader() {
         phase === "leaving" && "pointer-events-none opacity-0",
       )}
     >
-      <Logo height={38} alt="" eager />
+      <Logo height={54} alt="" eager />
       <div className="h-px w-[132px] overflow-hidden bg-line">
         <div
           ref={lineRef}

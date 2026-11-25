@@ -1,4 +1,4 @@
-import { BRAND, TAU, type CanvasFonts } from "./pen";
+import { BRAND, TAU } from "./pen";
 
 export type LensState = { x: number; y: number; vx: number; vy: number };
 
@@ -9,19 +9,15 @@ type LensDraw = {
   reducedMotion: boolean;
   width: number;
   height: number;
-  /** Texture shown in the outer ring (a finished website). */
-  site: HTMLCanvasElement;
-  /** Texture shown in the inner ring (its source code). */
+  /** Source-code texture revealed by the lens. */
   code: HTMLCanvasElement;
-  fonts: CanvasFonts;
 };
 
 /**
- * A wobbly, velocity-stretched double lens that reveals the website and,
- * deeper inside, the code behind it. Surrounded by a rotating tick dial.
+ * One code-only X-ray on every viewport, surrounded by a slowly rotating tick dial.
  */
 export function drawLens(ctx: CanvasRenderingContext2D, options: LensDraw) {
-  const { lens, radius, t, reducedMotion, width, height, site, code, fonts } = options;
+  const { lens, radius, t, reducedMotion, width, height, code } = options;
   const speed = Math.hypot(lens.vx, lens.vy);
   const heading = Math.atan2(lens.vy, lens.vx);
   const stretch = Math.min(0.38, speed * 0.014);
@@ -43,41 +39,27 @@ export function drawLens(ctx: CanvasRenderingContext2D, options: LensDraw) {
     ctx.closePath();
   };
 
-  // Parallax: the textures drift opposite to the lens, the inner one more.
-  const parallaxX = -(lens.x - width / 2) * 0.07;
-  const parallaxY = -(lens.y - height / 2) * 0.07;
-
+  // Overscan keeps the texture under the lens even at the viewport edges.
+  const parallaxX = -(lens.x - width / 2) * 0.04;
+  const parallaxY = -(lens.y - height / 2) * 0.04;
   ctx.save();
   blobPath(radius, 0);
-  ctx.fillStyle = "#000";
-  ctx.fill();
   ctx.clip();
-  ctx.globalAlpha = 0.62;
-  ctx.drawImage(site, parallaxX, parallaxY, width, height);
-  ctx.globalAlpha = 1;
-
-  blobPath(radius * 0.5, 2);
-  ctx.save();
-  ctx.clip();
-  ctx.fillStyle = "#050505";
-  ctx.fill();
-  ctx.drawImage(code, parallaxX * 1.8, parallaxY * 1.8, width, height);
-  ctx.restore();
+  ctx.drawImage(code, -width * 0.08 + parallaxX, -height * 0.08 + parallaxY, width * 1.16, height * 1.16);
+  // Dark veil keeps the code atmospheric so foreground hero typography stays effortlessly legible on desktop and mobile.
+  ctx.fillStyle = "rgba(0,0,0,0.58)";
+  ctx.fillRect(lens.x - radius * 1.6, lens.y - radius * 1.6, radius * 3.2, radius * 3.2);
   ctx.restore();
 
-  // Outlines
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(255,255,255,.32)";
+  ctx.strokeStyle = "rgba(245,117,30,.55)";
   blobPath(radius, 0);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(245,117,30,.85)";
-  blobPath(radius * 0.5, 2);
   ctx.stroke();
 
   // Dial ticks
   const rotation = reducedMotion ? 0 : t * 0.08;
   const dialRadius = radius * 1.08;
-  ctx.strokeStyle = "rgba(255,255,255,.28)";
+  ctx.strokeStyle = "rgba(255,255,255,.2)";
   ctx.beginPath();
   for (let i = 0; i < 60; i++) {
     const theta = (i / 60) * TAU + rotation;
@@ -98,14 +80,4 @@ export function drawLens(ctx: CanvasRenderingContext2D, options: LensDraw) {
     ctx.arc(lens.x, lens.y, dialRadius + 5, heading - 0.12, heading + 0.12);
     ctx.stroke();
   }
-
-  // Labels
-  ctx.font = `9px ${fonts.mono}`;
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255,255,255,.55)";
-  ctx.fillText("SPLETNA STRAN · 01", lens.x + radius * 0.8 + 12, lens.y - radius * 0.8 - 6);
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(245,117,30,.95)";
-  ctx.fillText("KODA · 02", lens.x, lens.y + radius * 0.5 + 16);
-  ctx.textAlign = "left";
 }

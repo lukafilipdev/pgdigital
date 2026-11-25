@@ -2,15 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import { useFrame } from "@/hooks/useFrame";
-import { useHoverEffects } from "@/hooks/useMediaQuery";
+import { useHoverEffects, useMediaQuery } from "@/hooks/useMediaQuery";
 import { usePointer } from "@/hooks/usePointer";
 import { approach, clamp } from "@/lib/math";
 
 /**
  * Elements opt in with `data-cursor="link" | "view" | "explore" | "none"` and
- * an optional `data-cursor-label`. An "explore" ring is only shown while the
- * element has a label (the hero updates its label as you scroll). "none" hides
- * the custom cursor, e.g. over iframes, where it can't follow the pointer.
+ * an optional `data-cursor-label`. Disabled on mobile/touch viewports so a
+ * stray orange dot never freezes over tapped mobile controls, and the center
+ * dot fades cleanly while a ring label ("RAZIŠČI", "VRTI", "POGLEJ") is shown.
  */
 const VARIANTS: Record<string, { size: number; accent: boolean }> = {
   link: { size: 42, accent: true },
@@ -19,18 +19,27 @@ const VARIANTS: Record<string, { size: number; accent: boolean }> = {
 };
 
 export function CustomCursor() {
-  const enabled = useHoverEffects();
+  const hoverCapable = useHoverEffects();
+  const isDesktopWidth = useMediaQuery("(min-width: 900px)");
+  const enabled = hoverCapable && isDesktopWidth;
   const pointer = usePointer();
   const rootRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const target = useRef<HTMLElement | null>(null);
+  const touchHidden = useRef(false);
   const cursor = useRef({ x: 0, y: 0, size: 0, label: "", initialised: false });
 
   useEffect(() => {
     if (!enabled) return;
     const root = document.documentElement;
     const onOver = (event: PointerEvent) => {
+      if (event.pointerType === "touch") {
+        touchHidden.current = true;
+        return;
+      }
+      touchHidden.current = false;
       target.current = (event.target as Element).closest<HTMLElement>("[data-cursor]");
     };
     root.classList.add("has-custom-cursor");
@@ -48,7 +57,7 @@ export function CustomCursor() {
     c.y = approach(c.y, pointer.y, 0.22);
 
     const element = target.current?.isConnected ? target.current : null;
-    const hidden = element?.dataset.cursor === "none";
+    const hidden = touchHidden.current || !pointer.active || element?.dataset.cursor === "none";
     const variant = element ? VARIANTS[element.dataset.cursor ?? ""] : undefined;
     const label = element?.dataset.cursorLabel ?? "";
     const targetSize =
@@ -65,7 +74,13 @@ export function CustomCursor() {
 
     const labelElement = labelRef.current!;
     if (label !== c.label) labelElement.textContent = c.label = label;
-    labelElement.style.opacity = String(clamp((c.size - 50) / 25));
+    const labelOpacity = label ? clamp((c.size - 50) / 25) : 0;
+    labelElement.style.opacity = String(labelOpacity);
+
+    // Hide the center orange dot while a text label is displayed so they never collide.
+    if (dotRef.current) {
+      dotRef.current.style.opacity = String(1 - labelOpacity);
+    }
   }, enabled);
 
   if (!enabled) return null;
@@ -74,18 +89,18 @@ export function CustomCursor() {
     <div
       ref={rootRef}
       aria-hidden
-      className="pointer-events-none fixed top-0 left-0 z-200 size-0 will-change-transform"
+      className="pointer-events-none fixed top-0 left-0 z-200 size-0 opacity-0 will-change-transform"
     >
       <div
         ref={ringRef}
-        className="absolute top-0 left-0 flex size-0 -translate-1/2 items-center justify-center rounded-full border border-white/40 opacity-0"
+        className="absolute top-0 left-0 flex size-0 -translate-1/2 items-center justify-center rounded-full border border-white/40 bg-black/35 opacity-0 backdrop-blur-[2px]"
       >
         <span
           ref={labelRef}
-          className="pl-[.2em] font-mono text-[8.5px] tracking-[.2em] whitespace-nowrap text-white"
+          className="pl-[.2em] font-mono text-[8.5px] font-semibold tracking-[.2em] whitespace-nowrap text-white"
         />
       </div>
-      <div className="absolute -top-[3.5px] -left-[3.5px] size-[7px] rounded-full bg-brand" />
+      <div ref={dotRef} className="absolute -top-[3.5px] -left-[3.5px] size-[7px] rounded-full bg-brand" />
     </div>
   );
 }

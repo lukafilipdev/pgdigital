@@ -7,11 +7,11 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 export function MetricsSlide({ active }: { active: boolean }) {
   return (
     <div className="flex size-full flex-col justify-between">
-      <div className="eyebrow text-muted">MERITVE · PO VSAKI OBJAVI</div>
-      <div className="grid grid-cols-3 gap-[6%]">
+      <div className="eyebrow-sm text-muted nav:eyebrow">MERITVE · PO VSAKI OBJAVI</div>
+      <div className="grid grid-cols-3 gap-[5%] nav:gap-[6%]">
         {QUALITY_METRICS.map(({ value, label }) => (
-          <div key={label} className="flex flex-col items-center gap-3.5">
-            <svg viewBox="0 0 100 100" aria-hidden className="w-full max-w-[130px] -rotate-90">
+          <div key={label} className="flex flex-col items-center gap-2 nav:gap-3.5">
+            <svg viewBox="0 0 100 100" aria-hidden className="w-full max-w-[82px] -rotate-90 nav:max-w-[130px]">
               <circle cx="50" cy="50" r={RADIUS} fill="none" stroke="#1f1f1f" strokeWidth="4" />
               <circle
                 cx="50"
@@ -32,7 +32,7 @@ export function MetricsSlide({ active }: { active: boolean }) {
           </div>
         ))}
       </div>
-      <div className="eyebrow-sm text-muted">POSODOBITVE · VARNOSTNE KOPIJE · NADZOR</div>
+      <div className="eyebrow-sm whitespace-nowrap text-muted">POSODOBITVE · VARNOST · NADZOR</div>
     </div>
   );
 }

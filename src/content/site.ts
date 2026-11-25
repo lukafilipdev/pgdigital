@@ -2,21 +2,44 @@ export const CONTACT_EMAIL = "digital@pginzeniring.si";
 
 export const NAV_LINKS = [
   { id: "domov", label: "DOMOV" },
+  { id: "o-nas", label: "O NAS" },
   { id: "storitve", label: "STORITVE" },
   { id: "projekti", label: "PROJEKTI" },
   { id: "proces", label: "PROCES" },
-  { id: "o-nas", label: "O NAS" },
   { id: "kontakt", label: "KONTAKT" },
 ] as const;
 
 export const SECTION_IDS = NAV_LINKS.map((link) => link.id);
 
-/** The four layers the hero peels a website into while scrolling. */
+/**
+ * The four layers the hero builds a website from — PG Digital's method.
+ * `spec` is the technical readout shown while the layer is being built.
+ */
 export const HERO_LAYERS = [
-  { name: "Koda", description: "Temelj, na katerem stoji vse ostalo.", label: "KODA" },
-  { name: "Struktura", description: "Hierarhija, vsebina in pot uporabnika.", label: "STRUKTURA" },
-  { name: "Oblika", description: "Tipografija, barva in ritem.", label: "OBLIKA" },
-  { name: "Izkušnja", description: "Gibanje, odziv in hitrost. Stran, ki deluje.", label: "IZKUŠNJA" },
+  {
+    name: "Koda",
+    description: "Stabilen tehnološki temelj, na katerem stoji vse ostalo.",
+    label: "KODA",
+    spec: "BUILD 1,2 s · 0 NAPAK",
+  },
+  {
+    name: "Struktura",
+    description: "Hierarhija, vsebina in pot uporabnika.",
+    label: "STRUKTURA",
+    spec: "MREŽA 12 STOLPCEV · 1440 PX",
+  },
+  {
+    name: "Oblika",
+    description: "Identiteta, tipografija, razmiki in vmesnik.",
+    label: "OBLIKA",
+    spec: "BRICOLAGE · #F5751E · RITEM 8 PX",
+  },
+  {
+    name: "Izkušnja",
+    description: "Gibanje, odziv in hitrost. Stran, ki deluje.",
+    label: "IZKUŠNJA",
+    spec: "60 FPS · LCP 0,9 s · 98 / 100",
+  },
 ] as const;
 
 export const SERVICES = [
@@ -59,6 +82,8 @@ export type Project = {
   year: string;
   services: string;
   summary: string;
+  /** Short feature tags highlighted on the showcase card. */
+  highlights: readonly string[];
   url: string;
   /** How the project card shows the site: a desktop or a phone screenshot. */
   cardView: CardView;
@@ -70,7 +95,7 @@ export type Project = {
 };
 
 /** Screenshots are generated from each project's `url` by `npm run capture`. */
-export const projectScreenshot = (slug: string, kind: "card" | "cover") =>
+export const projectScreenshot = (slug: string, kind: "card" | "cover" | "phone") =>
   `/images/projects/${slug}-${kind}.png`;
 
 export type Shot = {
@@ -103,6 +128,7 @@ export const PROJECTS: Project[] = [
     services: "OBLIKOVANJE · RAZVOJ",
     summary:
       "Spletna stran za butični studio zaščite in preobrazbe vozil BMW M, Audi RS in Porsche. Temna, filmska podoba postavi avtomobile v ospredje, pot do povpraševanja in rezervacije pa je kratka — v slovenščini, angleščini in nemščini.",
+    highlights: ["SI · EN · DE", "FILMSKA PODOBA", "HITRA REZERVACIJA"],
     url: "https://www.midnightautostudio.com/",
     cardView: "desktop",
     // The site crashes inside an iframe when the browser blocks third-party
@@ -116,16 +142,69 @@ export const PROJECTS: Project[] = [
     year: "2026",
     services: "OBLIKOVANJE · RAZVOJ",
     summary:
-      "Spletna stran za slovensko gradbeno podjetje, ki projekte vodi od projektiranja do gradnje in nadzora. Umirjena, arhitekturna podoba predstavi storitve jasno — tudi na telefonu.",
-    url: "https://pging.vercel.app/",
+      "Spletna stran za slovensko gradbeno podjetje, ki projekte vodi od projektiranja do gradnje in nadzora. Umirjena, arhitekturna podoba predstavi storitve jasno — na velikem zaslonu in na telefonu.",
+    highlights: ["NAMIZNA + MOBILNA", "ARHITEKTURNI UX", "PREDOGLED V ŽIVO"],
+    url: "https://www.pg-inzeniring.si/",
     cardView: "phone",
     embeddable: true,
   },
 ];
 
+export const STUDIO_METRICS = [
+  { value: "98+", label: "LIGHTHOUSE HITROST" },
+  { value: "< 24 h", label: "ODZIVNI ČAS" },
+  { value: "4–6", label: "TEDNOV DO OBJAVE" },
+  { value: "100 %", label: "KODA PO MERI" },
+] as const;
+
 export const PROCESS_STEPS = [
-  { name: "IDEJA", word: "Ideja." },
-  { name: "OBLIKA", word: "Oblika." },
-  { name: "RAZVOJ", word: "Razvoj." },
-  { name: "OBJAVA", word: "Objava." },
+  {
+    index: "01",
+    name: "IDEJA",
+    word: "Ideja in strategija.",
+    timeline: "TEDEN 01",
+    description:
+      "Razumemo vaš posel, ciljno občinstvo in prodajni tok. Določimo jasno strukturo vsebine, ki obiskovalca vodi do povpraševanja.",
+    deliverables: ["UVODNA DELAVNICA", "INFORMACIJSKA ARHITEKTURA", "NAČRT PROJEKTA"],
+  },
+  {
+    index: "02",
+    name: "OBLIKA",
+    word: "Oblikovanje sistema.",
+    timeline: "TEDEN 02–03",
+    description:
+      "Zasnujemo tipografijo, barvni sistem, interaktivne komponente in vizualno smer po meri vaše blagovne znamke — brez šablon.",
+    deliverables: ["VIZUALNI SISTEM", "INTERAKTIVNI PROTOTIP", "MOBILNI PRIKAZ"],
+  },
+  {
+    index: "03",
+    name: "RAZVOJ",
+    word: "Inženiring in razvoj.",
+    timeline: "TEDEN 03–05",
+    description:
+      "Obliko pretvorimo v hitro, varno Next.js in TypeScript kodo z gibanjem pri 60 FPS, tehničnim SEO in čistim urejanjem vsebin.",
+    deliverables: ["NEXT.JS + TYPESCRIPT", "ANIMACIJE 60 FPS", "TEHNIČNI SEO"],
+  },
+  {
+    index: "04",
+    name: "OBJAVA",
+    word: "Objava in podpora.",
+    timeline: "TEDEN 06",
+    description:
+      "Pred objavo preverimo hitrost, dostopnost in vse naprave. Stran postavimo v produkcijo ter skrbimo za posodobitve in rast.",
+    deliverables: ["TESTIRANJE NA NAPRAVAH", "OBJAVA V PRODUKCIJO", "STALNA PODPORA"],
+  },
+] as const;
+
+export const INQUIRY_SCOPES = [
+  "Spletna stran",
+  "Prenova",
+  "E-commerce",
+  "Vzdrževanje",
+] as const;
+
+export const INQUIRY_TIMELINES = [
+  "Čim prej",
+  "V 1–2 mesecih",
+  "Načrtujem vnaprej",
 ] as const;

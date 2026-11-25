@@ -46,7 +46,7 @@ function tokenColor(token: string) {
   return "rgba(255,255,255,.55)";
 }
 
-/** Syntax-highlighted source code filling the whole texture (seen through the inner lens). */
+/** Repeating source columns cover the viewport, including both outer edges. */
 export function paintCode(pen: Pen, w: number, h: number) {
   const { ctx } = pen;
   ctx.fillStyle = "#050505";
@@ -54,23 +54,30 @@ export function paintCode(pen: Pen, w: number, h: number) {
 
   const fontSize = Math.max(11, Math.min(w, h) * 0.02);
   const lineHeight = fontSize * 1.8;
-  const left = Math.max(w * 0.08, w / 2 - fontSize * 17);
+  const columnWidth = fontSize * 38;
   ctx.font = `500 ${fontSize}px ${pen.fonts.mono}`;
 
-  let line = 0;
-  for (let y = fontSize * 2; y < h + lineHeight; y += lineHeight, line++) {
-    ctx.textAlign = "right";
-    ctx.fillStyle = "rgba(255,255,255,.18)";
-    ctx.fillText(String(line + 1), left - fontSize * 1.6, y);
-    ctx.textAlign = "left";
-
-    let x = left;
-    for (const token of CODE_LINES[line % CODE_LINES.length].split(TOKEN)) {
-      if (!token) continue;
-      ctx.fillStyle = tokenColor(token);
-      ctx.fillText(token, x, y);
-      x += ctx.measureText(token).width;
+  for (let column = 0, left = -fontSize * 5; left < w; column++, left += columnWidth) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left - fontSize * 3, 0, columnWidth, h);
+    ctx.clip();
+    let line = 0;
+    for (let y = fontSize * 2; y < h + lineHeight; y += lineHeight, line++) {
+      ctx.textAlign = "right";
+      ctx.fillStyle = "rgba(255,255,255,.18)";
+      ctx.fillText(String(line + 1), left - fontSize * 1.6, y);
+      ctx.textAlign = "left";
+  
+      let x = left;
+      for (const token of CODE_LINES[(line + column * 7) % CODE_LINES.length].split(TOKEN)) {
+        if (!token) continue;
+        ctx.fillStyle = tokenColor(token);
+        ctx.fillText(token, x, y);
+        x += ctx.measureText(token).width;
+      }
     }
+    ctx.restore();
   }
 
   // Highlight the "current" line.

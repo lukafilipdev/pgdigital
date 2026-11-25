@@ -44,9 +44,12 @@ src/
 - **Pinned sections** are tall `<section>`s with a `position: sticky` stage;
   `getPinProgress()` maps the scroll position to 0–1.
 - **Hero canvas** (`sections/hero/engine`): `HeroScene` composes a spring mesh,
-  a lens that reveals a painted website and its code, a 3D stack of four layers
-  (textures painted once into offscreen canvases and perspective-mapped), and a
-  perspective floor for the closing statement.
+  a lens that reveals the code under the headline, a 3D stack of four layers
+  (code → structure → form → experience; textures painted once into offscreen
+  canvases and perspective-mapped) that lands one layer per scroll stage, merges
+  into the finished, front-facing site, and a perspective floor whose buildings
+  turn digital under the closing statement. The scroll timeline lives in
+  `TIMELINE` at the top of `Hero.tsx`.
 - **Cursor hints.** Any element can opt in with `data-cursor="link" | "view" | "explore"`
   and an optional `data-cursor-label`.
 - `prefers-reduced-motion` and coarse pointers disable the cursor, magnetic and

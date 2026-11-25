@@ -35,7 +35,7 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
       className="fixed inset-0 z-90 flex flex-col bg-black px-[22px] pt-[18px] pb-7"
     >
       <div className="flex h-[46px] items-center justify-between">
-        <Logo height={24} eager />
+        <Logo height={34} eager />
         <button
           ref={closeRef}
           type="button"

@@ -1,4 +1,5 @@
 import { CustomCursor } from "@/components/effects/CustomCursor";
+import { SmoothScroll } from "@/components/effects/SmoothScroll";
 import { IntroProvider } from "@/components/intro/IntroProvider";
 import { Loader } from "@/components/intro/Loader";
 import { Header } from "@/components/layout/Header";
@@ -11,6 +12,7 @@ import { Services } from "@/components/sections/services/Services";
 export default function HomePage() {
   return (
     <IntroProvider>
+      <SmoothScroll />
       <Loader />
       <CustomCursor />
       <Header />

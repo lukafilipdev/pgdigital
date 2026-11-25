@@ -14,12 +14,12 @@ export function Kicker({ left, right, className, ref }: KickerProps) {
     <div
       ref={ref}
       className={cn(
-        "flex items-center gap-3.5 font-mono text-[10.5px] tracking-[.2em] text-muted",
+        "flex items-center gap-3.5 font-mono text-[11.5px] tracking-[.18em] text-subtle",
         className,
       )}
     >
       <span>{left}</span>
-      <span aria-hidden className="h-px w-[18px] bg-brand" />
+      <span aria-hidden className="h-px w-[18px] shrink-0 bg-brand" />
       <span>{right}</span>
     </div>
   );

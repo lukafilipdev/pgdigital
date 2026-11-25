@@ -3,103 +3,127 @@
 import { useRef, useState } from "react";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { PROJECTS } from "@/content/site";
-import { useFrame } from "@/hooks/useFrame";
-import { useInViewport } from "@/hooks/useInView";
-import { useReducedMotion } from "@/hooks/useMediaQuery";
-import { approach, padNumber } from "@/lib/math";
-import { getPinProgress } from "@/lib/scroll";
+import { useInViewOnce } from "@/hooks/useInView";
+import { cn } from "@/lib/cn";
+import { padNumber } from "@/lib/math";
 import { CaseStudyDialog } from "./CaseStudyDialog";
 import { ProjectCard } from "./ProjectCard";
 
 type OpenCase = { index: number; origin: DOMRect };
 
-/** Pinned section whose vertical scroll drives a horizontal project track. */
+/**
+ * Editorial flagship portfolio section showcasing finished client work in
+ * full-bleed interactive spreads, followed by a prominent "Vaš projekt" CTA.
+ */
 export function Projects() {
   const sectionRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const counterRef = useRef<HTMLSpanElement>(null);
-  const barRef = useRef<HTMLSpanElement>(null);
-  const progress = useRef(0);
+  const revealed = useInViewOnce(sectionRef);
   const [openCase, setOpenCase] = useState<OpenCase | null>(null);
-  const visible = useInViewport(sectionRef);
-  const reducedMotion = useReducedMotion();
-
-  useFrame(() => {
-    const section = sectionRef.current;
-    const track = trackRef.current;
-    if (!section || !track) return;
-
-    const target = getPinProgress(section);
-    progress.current = reducedMotion ? target : approach(progress.current, target, 0.12);
-    const q = progress.current;
-
-    const maxShift = Math.max(0, track.scrollWidth - window.innerWidth);
-    track.style.transform = `translate3d(${-maxShift * q}px,0,0)`;
-
-    const current = Math.min(PROJECTS.length - 1, Math.floor(q * PROJECTS.length)) + 1;
-    if (counterRef.current) counterRef.current.textContent = padNumber(current, 2);
-    if (barRef.current) barRef.current.style.transform = `scaleX(${q})`;
-  }, visible);
 
   return (
     <section
       id="projekti"
       ref={sectionRef}
       aria-labelledby="projekti-h"
-      className="relative h-[260vh] border-t border-line-soft"
+      className="relative bg-black px-[clamp(18px,3.2vw,48px)] py-[clamp(96px,14vh,168px)] text-white"
     >
-      <div className="sticky top-0 flex h-svh flex-col justify-center overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-[clamp(18px,3vw,40px)] top-[clamp(84px,12vh,120px)] flex items-start justify-between gap-5">
-          <div className="flex flex-col gap-[18px]">
-            <SectionLabel index="03">PROJEKTI</SectionLabel>
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[clamp(44px,7vh,80px)]">
+        {/* Section Header */}
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="flex flex-col gap-[22px] nav:gap-4">
+            <SectionLabel index="04">PROJEKTI</SectionLabel>
             <h2
               id="projekti-h"
-              className="text-[clamp(34px,4.4vw,76px)] leading-[.95] font-bold tracking-[-.055em]"
+              className="overflow-hidden pb-[.06em] text-[clamp(48px,8vw,148px)] leading-[.92] font-extrabold tracking-[-.048em] nav:text-[clamp(56px,6vw,104px)]"
             >
-              Izbrano delo.
+              <span
+                className={cn(
+                  "block transition-transform duration-1100 ease-smooth",
+                  !revealed && "translate-y-[105%]",
+                )}
+              >
+                Izbrano delo.
+              </span>
             </h2>
           </div>
-          <div aria-hidden className="eyebrow flex items-center gap-3.5 text-muted">
-            <span ref={counterRef} className="text-white">
-              01
+
+          <div
+            className={cn(
+              "flex max-w-[380px] flex-col items-start gap-3 transition-opacity delay-300 duration-1000 nav:items-end nav:text-right",
+              !revealed && "opacity-0",
+            )}
+          >
+            <span className="eyebrow flex items-center gap-2 text-brand">
+              <span className="size-1.5 rounded-full bg-brand" />
+              {padNumber(PROJECTS.length, 2)} OBJAVLJENA PROJEKTA · 2026
             </span>
-            <span className="relative h-px w-[60px] overflow-hidden bg-line-strong">
-              <span
-                ref={barRef}
-                className="absolute inset-0 origin-left bg-brand"
-                style={{ transform: "scaleX(0)" }}
-              />
-            </span>
-            <span>{padNumber(PROJECTS.length, 2)}</span>
+            <p className="text-base leading-normal text-pretty text-subtle">
+              Vsaka spletna stran je zgrajena od temeljev — po meri znamke, brez šablon in kompromisov.
+            </p>
           </div>
         </div>
 
-        <div
-          ref={trackRef}
-          className="mt-[clamp(130px,20vh,200px)] flex w-max items-start gap-[clamp(28px,5vw,90px)] px-[max(12vw,clamp(18px,3vw,40px))] will-change-transform [--card-h:min(max(240px,31.6vw),55vh)]"
-        >
+        {/* Flagship Project Spreads */}
+        <div className="flex flex-col gap-[clamp(28px,4.5vh,52px)]">
           {PROJECTS.map((project, index) => (
             <ProjectCard
-              key={project.title}
+              key={project.slug}
               project={project}
               index={index}
               onOpen={(origin) => setOpenCase({ index, origin })}
             />
           ))}
-
-          <a
-            href="#kontakt"
-            data-cursor="link"
-            className="flex w-[clamp(260px,30vw,460px)] flex-none flex-col gap-5 self-center transition-colors hover:text-brand"
-          >
-            <span className="eyebrow text-brand">
-              {padNumber(PROJECTS.length + 1, 2)} — VAŠ PROJEKT
-            </span>
-            <span className="text-[clamp(34px,4.4vw,76px)] leading-[.95] font-bold tracking-[-.055em]">
-              Naslednji je lahko vaš. →
-            </span>
-          </a>
         </div>
+
+        {/* Monumental "Vaš projekt" CTA Banner */}
+        <a
+          href="#kontakt"
+          data-cursor="link"
+          className="group relative flex flex-col justify-between gap-7 overflow-hidden rounded-md border border-white/[0.12] bg-[#08080b] p-6 transition-colors duration-500 hover:border-brand/60 sm:p-10 nav:flex-row nav:items-center nav:p-14"
+        >
+          {/* Subtle architectural grid backdrop */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-35"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(245,117,30,0.16),transparent_68%)] transition-transform duration-700 group-hover:scale-125"
+          />
+
+          <div className="relative z-10 flex flex-col gap-3.5">
+            <div className="eyebrow flex items-center gap-2.5 text-brand">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60" />
+                <span className="relative inline-flex size-2 rounded-full bg-brand" />
+              </span>
+              <span>
+                {padNumber(PROJECTS.length + 1, 2)} — VAŠ PROJEKT · PROSTI TERMINI 2026
+              </span>
+            </div>
+            <div className="text-[clamp(32px,4.4vw,68px)] leading-[0.96] font-extrabold tracking-[-0.055em] text-white transition-colors duration-300 group-hover:text-white">
+              Naslednji je lahko <span className="text-brand">vaš.</span>
+            </div>
+            <p className="max-w-[520px] text-[15px] leading-relaxed text-soft">
+              Povejte nam za svoj cilj — pripravimo jasen načrt, oblikovno smer in časovnico izvedbe.
+            </p>
+          </div>
+
+          <span className="eyebrow relative z-10 inline-flex h-13 shrink-0 items-center justify-center gap-2.5 rounded-full bg-brand px-7 font-bold text-black transition-all duration-400 group-hover:bg-white">
+            <span>ZAČNIMO PROJEKT</span>
+            <span
+              aria-hidden
+              className="inline-block transition-transform duration-400 ease-smooth group-hover:translate-x-1.5"
+            >
+              →
+            </span>
+          </span>
+        </a>
       </div>
 
       {openCase && (

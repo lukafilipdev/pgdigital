@@ -67,6 +67,7 @@ async function main() {
     for (const project of PROJECTS) {
       await capture(browser, project.url, SCREENSHOTS[project.cardView], projectScreenshot(project.slug, "card"));
       await capture(browser, project.url, SCREENSHOTS.cover, projectScreenshot(project.slug, "cover"));
+      await capture(browser, project.url, SCREENSHOTS.phone, projectScreenshot(project.slug, "phone"));
     }
   } finally {
     await browser.close();

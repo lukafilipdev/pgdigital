@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { projectScreenshot, type Project } from "@/content/site";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
 
 const MODES = [
@@ -13,30 +14,42 @@ const MODES = [
 type Mode = (typeof MODES)[number]["id"];
 
 /**
- * The project's live website in a browser frame. The screenshot is shown
- * until the iframe has loaded, so the header is never empty.
+ * Consistent interactive desktop/mobile preview frame for every case study.
+ * Uses full-resolution captured screenshots so previews never break behind
+ * third-party iframe overlays, and defaults cleanly to mobile on narrow viewports.
  */
 export function LivePreview({ project }: { project: Project }) {
-  const [mode, setMode] = useState<Mode>("desktop");
-  const [loaded, setLoaded] = useState(false);
-  const host = new URL(project.url).host;
+  const isDesktop = useMediaQuery("(min-width: 720px)");
+  const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
+  const mode: Mode = selectedMode ?? (isDesktop ? "desktop" : "mobile");
+  const host = new URL(project.url).host.replace(/^www\./, "");
+  const desktopSrc =
+    project.cardView === "desktop"
+      ? projectScreenshot(project.slug, "card")
+      : projectScreenshot(project.slug, "cover");
+  const phoneSrc = projectScreenshot(project.slug, "phone");
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-line-strong bg-[#050505]">
-      <div className="eyebrow-sm flex h-11 shrink-0 items-center gap-3 border-b border-line px-4 text-muted">
-        <span className={cn("size-1.5 rounded-full", loaded ? "bg-brand" : "bg-[#444]")} />
-        <span className="min-w-0 flex-1 truncate tracking-[.08em] text-[#bdbdbd]">{host}</span>
-        <div role="group" aria-label="Velikost predogleda" className="hidden gap-1 sm:flex">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/[0.12] bg-[#060608]">
+      <div className="eyebrow-sm flex h-12 shrink-0 items-center gap-3 border-b border-white/[0.08] bg-[#0e0e11] px-4 text-muted">
+        <div className="hidden items-center gap-1.5 sm:flex">
+          <span className="size-2 rounded-full bg-white/20" />
+          <span className="size-2 rounded-full bg-white/20" />
+          <span className="size-2 rounded-full bg-white/20" />
+        </div>
+        <span className="size-1.5 shrink-0 rounded-full bg-brand" />
+        <span className="min-w-0 flex-1 truncate tracking-[.08em] text-white/80">{host}</span>
+        <div role="group" aria-label="Velikost predogleda" className="flex gap-1">
           {MODES.map(({ id, label }) => (
             <button
               key={id}
               type="button"
               aria-pressed={mode === id}
-              onClick={() => setMode(id)}
+              onClick={() => setSelectedMode(id)}
               data-cursor="link"
               className={cn(
                 "cursor-pointer rounded-full px-3 py-1.5 transition-colors",
-                mode === id ? "bg-white text-black" : "hover:text-white",
+                mode === id ? "bg-white text-black" : "text-subtle hover:text-white",
               )}
             >
               {label}
@@ -48,34 +61,46 @@ export function LivePreview({ project }: { project: Project }) {
           target="_blank"
           rel="noopener noreferrer"
           data-cursor="link"
-          className="transition-colors hover:text-brand"
+          className="hidden transition-colors hover:text-brand sm:inline"
         >
           ODPRI ↗
         </a>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 justify-center bg-[#0b0b0b]">
-        <Image
-          src={projectScreenshot(project.slug, "cover")}
-          alt=""
-          fill
-          sizes="100vw"
-          className={cn("object-cover object-top transition-opacity duration-500", loaded && "opacity-0")}
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[#040406] p-4 sm:p-7">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(245,117,30,0.08),transparent_65%)]"
         />
-        <iframe
-          src={project.url}
-          title={`Predogled spletne strani ${project.title}`}
-          // The page's custom cursor can't follow the pointer inside the frame.
-          data-cursor="none"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-          referrerPolicy="strict-origin-when-cross-origin"
-          onLoad={() => setLoaded(true)}
-          className={cn(
-            "relative h-full border-0 transition-[width,opacity] duration-500 ease-smooth",
-            mode === "mobile" ? "w-[390px] max-w-full border-x border-line-strong" : "w-full",
-            !loaded && "opacity-0",
-          )}
-        />
+
+        {mode === "desktop" ? (
+          <div
+            className={cn(
+              "relative max-h-full w-full max-w-[1120px] overflow-hidden rounded-[6px] border border-white/[0.12] bg-black shadow-[0_24px_60px_rgba(0,0,0,0.8)]",
+              project.cardView === "phone" ? "aspect-[2/1]" : "aspect-[1440/990]",
+            )}
+          >
+            <Image
+              src={desktopSrc}
+              alt={`Namizni prikaz spletne strani ${project.title}`}
+              fill
+              sizes="(min-width: 900px) 88vw, 96vw"
+              className="object-contain object-center"
+            />
+          </div>
+        ) : (
+          <div className="relative h-full max-h-[620px] aspect-[390/844] overflow-hidden rounded-[26px] border-[3px] border-white/20 bg-[#08080a] p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.9)]">
+            <div className="relative size-full overflow-hidden rounded-[20px] bg-black">
+              <Image
+                src={phoneSrc}
+                alt={`Mobilni prikaz spletne strani ${project.title}`}
+                fill
+                sizes="340px"
+                className="object-cover object-top"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

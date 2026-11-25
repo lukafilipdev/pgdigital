@@ -15,17 +15,18 @@ type MeshUpdate = {
 };
 
 type MeshDraw = {
-  t: number;
   alpha: number;
   lensRadius: number;
-  ambient: boolean;
   width: number;
   height: number;
 };
 
+/** Opacity of each vertex bucket (bucket n holds alphas in [n/8, (n+1)/8)). */
+const VERTEX_BUCKETS = Array.from({ length: 8 }, (_, n) => (n + 0.6) / 8);
+
 /**
  * A spring-driven grid of points that is pushed away by the lens,
- * gently undulates, and is drawn as a wireframe with glowing vertices.
+ * gently undulates, and is drawn as a wireframe with vertex points.
  */
 export class Mesh {
   private cols = 0;
@@ -38,8 +39,6 @@ export class Mesh {
   private screenX = new Float32Array(0);
   private screenY = new Float32Array(0);
   private screenScale = new Float32Array(0);
-  /** Per-vertex pseudo-random phase for the twinkle effect. */
-  private seed = new Float32Array(0);
   private readonly projected: Projected = [0, 0, 0];
 
   resize(width: number, height: number, mobile: boolean) {
@@ -56,14 +55,12 @@ export class Mesh {
     this.screenX = buffer();
     this.screenY = buffer();
     this.screenScale = buffer();
-    this.seed = buffer();
 
     for (let j = 0; j < this.rows; j++) {
       for (let i = 0; i < this.cols; i++) {
         const k = j * this.cols + i;
         this.baseX[k] = (i - (this.cols - 1) / 2) * spacing;
         this.baseY[k] = (j - (this.rows - 1) / 2) * spacing;
-        this.seed[k] = (Math.sin(k * 12.9898) * 43758.5453) % 1;
       }
     }
   }
@@ -114,7 +111,7 @@ export class Mesh {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D, { t, alpha, lensRadius, ambient, width, height }: MeshDraw) {
+  draw(ctx: CanvasRenderingContext2D, { alpha, lensRadius, width, height }: MeshDraw) {
     if (alpha <= 0.01) return;
     const { cols, rows, screenX: px, screenY: py } = this;
 
@@ -141,7 +138,10 @@ export class Mesh {
     ctx.stroke();
 
     // Vertices — brighter (and orange) the further the lens displaced them.
+    // Plain vertices are batched into a few opacity buckets: one fill each.
+    const buckets = VERTEX_BUCKETS.map(() => new Path2D());
     const inverseRadius = 1 / Math.max(40, lensRadius || 40);
+    ctx.fillStyle = BRAND;
     for (let k = 0; k < this.count; k++) {
       const x = px[k];
       const y = py[k];
@@ -150,17 +150,25 @@ export class Mesh {
       const ox = this.offset.x[k];
       const oy = this.offset.y[k];
       const displacement = Math.sqrt(ox * ox + oy * oy) * inverseRadius;
-      const twinkle = ambient ? Math.pow(Math.max(0, Math.sin(t * 1.3 + this.seed[k] * 40)), 16) * 0.5 : 0;
       const depth = clamp((this.screenScale[k] - 0.55) * 2.2, 0.15, 1);
-      const a = (0.16 + Math.min(0.7, displacement * 1.1) + twinkle) * alpha * depth;
+      const a = (0.16 + Math.min(0.7, displacement * 1.1)) * alpha * depth;
       if (a < 0.02) continue;
 
-      const orange = displacement > 0.62;
-      ctx.fillStyle = orange ? BRAND : "#fff";
-      ctx.globalAlpha = Math.min(1, orange ? a * 1.2 : a);
-      const size = (orange ? 2 : 1.4) * this.screenScale[k];
-      ctx.fillRect(x - size / 2, y - size / 2, size, size);
+      if (displacement > 0.62) {
+        ctx.globalAlpha = Math.min(1, a * 1.2);
+        const size = 2 * this.screenScale[k];
+        ctx.fillRect(x - size / 2, y - size / 2, size, size);
+      } else {
+        const size = 1.4 * this.screenScale[k];
+        const bucket = Math.min(VERTEX_BUCKETS.length - 1, Math.floor(a * VERTEX_BUCKETS.length));
+        buckets[bucket].rect(x - size / 2, y - size / 2, size, size);
+      }
     }
+    ctx.fillStyle = "#fff";
+    buckets.forEach((path, n) => {
+      ctx.globalAlpha = VERTEX_BUCKETS[n];
+      ctx.fill(path);
+    });
     ctx.globalAlpha = 1;
   }
 }
