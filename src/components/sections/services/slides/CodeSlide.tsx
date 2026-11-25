@@ -62,31 +62,39 @@ function RevealLine({ active, index, className, style, children }: RevealLinePro
   );
 }
 
-/** Web development: a component that types itself in, line by line. */
+/** Web development: a typed Next.js component paired with responsive viewport wireframes. */
 export function CodeSlide({ active }: { active: boolean }) {
   return (
-    <div className="flex size-full flex-col gap-1 font-mono text-[11px] leading-[1.48] text-muted nav:gap-1.5 nav:text-[clamp(11px,1vw,14px)] nav:leading-[1.7]">
-      <div className="eyebrow-sm mb-1.5 nav:eyebrow nav:mb-3.5">STRUKTURA · KOMPONENTE</div>
-      {LINES.map(({ indent, bright, content }, index) => (
-        <RevealLine
-          key={index}
-          active={active}
-          index={index}
-          className={cn(bright && "text-white")}
-          style={{ paddingLeft: `${indent * 2}ch` }}
-        >
-          {content}
-        </RevealLine>
-      ))}
-      <RevealLine
-        active={active}
-        index={LINES.length}
-        className="mt-auto flex flex-wrap gap-[18px]"
-      >
-        <span className="text-brand">● build 1,2 s</span>
-        <span>TypeScript · 0 napak</span>
-        <span>Next.js</span>
-      </RevealLine>
+    <div className="flex size-full flex-col justify-between gap-3 nav:gap-5">
+      <div className="flex flex-col gap-0.5 rounded-[12px] border border-white/10 bg-[#18181c]/80 px-3.5 py-2.5 font-mono text-[10.5px] leading-[1.45] text-muted nav:gap-1 nav:px-5 nav:py-4 nav:text-[13px] nav:leading-[1.75]">
+        {LINES.map(({ indent, bright, content }, index) => (
+          <RevealLine
+            key={index}
+            active={active}
+            index={index}
+            className={cn("flex gap-3.5", bright && "text-white")}
+          >
+            <span className="w-3 shrink-0 select-none text-white/25">{index + 1}</span>
+            <span style={{ paddingLeft: `${indent * 1.5}ch` }}>{content}</span>
+          </RevealLine>
+        ))}
+      </div>
+
+      {/* Responsive breakpoint wireframes (375 / 768 / 1440) */}
+      <div className="flex items-end gap-3 nav:gap-4">
+        <div className="flex shrink-0 flex-col items-center gap-1.5">
+          <span className="h-9 w-6 rounded-[5px] border-[1.5px] border-brand nav:h-[54px] nav:w-8" />
+          <span className="font-mono text-[9.5px] tracking-[.1em] text-white/45">375</span>
+        </div>
+        <div className="flex shrink-0 flex-col items-center gap-1.5">
+          <span className="h-12 w-11 rounded-[5px] border-[1.5px] border-white/35 nav:h-[72px] nav:w-16" />
+          <span className="font-mono text-[9.5px] tracking-[.1em] text-white/45">768</span>
+        </div>
+        <div className="flex flex-1 flex-col items-center gap-1.5">
+          <span className="h-14 w-full rounded-[5px] border-[1.5px] border-white/35 nav:h-[86px]" />
+          <span className="font-mono text-[9.5px] tracking-[.1em] text-white/45">1440</span>
+        </div>
+      </div>
     </div>
   );
 }

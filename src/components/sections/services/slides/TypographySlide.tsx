@@ -28,53 +28,40 @@ export function TypographySlide({ active }: { active: boolean }) {
   }, active && !reducedMotion);
 
   return (
-    <div className="relative grid size-full grid-cols-6 grid-rows-[auto_1fr_auto] gap-3 nav:gap-4">
-      {/* Subtle architectural 12-column blueprint guides */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-[8%] grid grid-cols-12 gap-2 px-[6%] nav:-inset-[6%]"
-      >
-        {Array.from({ length: 12 }, (_, i) => (
-          <span key={i} className="border-x border-white/[0.035]" />
-        ))}
-      </div>
-
-      <div className="relative col-span-full flex items-center justify-between gap-2 border-b border-white/10 pb-2 nav:pb-2.5">
-        <span className="eyebrow-sm text-white/75 nav:eyebrow">TIPOGRAFSKI SISTEM · BRICOLAGE</span>
-        <span className="eyebrow-sm hidden text-brand sm:inline">12-STOLPČNA MREŽA</span>
-      </div>
-
-      <div className="relative col-[1/4] flex flex-col justify-center sm:col-[1/5]">
-        <div
-          ref={specimenRef}
-          className="font-display text-[clamp(64px,16vw,124px)] leading-[.82] font-extrabold tracking-[-.06em] text-paper nav:text-[clamp(92px,15vh,164px)]"
-        >
-          Aa
-        </div>
-        <span className="eyebrow-sm mt-2 text-white/40">BRICOLAGE · 500–800</span>
-      </div>
-
-      <div className="relative col-[4/7] flex flex-col justify-center gap-2 border-l border-white/10 pl-3 sm:col-[5/7] nav:gap-3 nav:pl-4">
-        {TYPE_SCALE.map((row) => (
-          <div key={row.role} className="flex flex-col">
-            <span className={row.className}>{row.role}</span>
-            <span className="font-mono text-[10px] tracking-[.12em] text-white/45">{row.size}</span>
+    <div className="relative flex size-full flex-col justify-between gap-3 nav:gap-5">
+      <div className="grid flex-1 grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-center gap-4 nav:gap-6">
+        <div className="flex flex-col justify-center">
+          <div
+            ref={specimenRef}
+            className="font-display text-[clamp(62px,15vw,116px)] leading-[.82] font-extrabold tracking-[-.06em] text-paper nav:text-[clamp(96px,14vh,164px)]"
+          >
+            Aa
           </div>
-        ))}
+          <span className="eyebrow-sm mt-2 text-white/45">BRICOLAGE GROTESQUE · 500–800</span>
+        </div>
+
+        <div className="flex flex-col justify-center gap-2 border-l border-white/12 pl-3.5 nav:gap-3.5 nav:pl-5">
+          {TYPE_SCALE.map((row) => (
+            <div key={row.role} className="flex flex-col">
+              <span className={row.className}>{row.role}</span>
+              <span className="font-mono text-[10px] tracking-[.12em] text-white/45">{row.size}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="relative col-span-full grid grid-cols-4 gap-1.5 nav:gap-2">
+      <div className="grid grid-cols-4 gap-1.5 nav:gap-2">
         {PALETTE_TOKENS.map(({ label, hex, swatchClass }) => (
           <div
             key={label}
-            className="flex flex-col gap-1.5 rounded-sm border border-white/10 bg-white/[0.03] px-2 py-1.5 nav:px-2.5 nav:py-2"
+            className="flex flex-col gap-1.5 rounded-[8px] border border-white/10 bg-white/[0.03] px-2 py-1.5 nav:gap-2 nav:px-2.5 nav:py-2.5"
           >
-            <span className={`h-2.5 w-full rounded-[2px] nav:h-3 ${swatchClass}`} />
+            <span className={`h-4 w-full rounded-[4px] nav:h-7 ${swatchClass}`} />
             <div className="flex flex-col">
-              <span className="font-mono text-[8.5px] font-semibold tracking-[.12em] text-white/80 nav:text-[9px]">
+              <span className="font-mono text-[8.5px] font-semibold tracking-[.1em] text-white/80 nav:text-[9.5px]">
                 {label}
               </span>
-              <span className="hidden font-mono text-[8.5px] tracking-[.06em] text-white/40 sm:block">
+              <span className="hidden font-mono text-[8.5px] tracking-[.06em] text-white/45 sm:block">
                 {hex}
               </span>
             </div>

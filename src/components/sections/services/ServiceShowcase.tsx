@@ -26,8 +26,7 @@ type ServiceShowcaseProps = {
 /** Sticky panel illustrating the active service; tilts towards the pointer. */
 export function ServiceShowcase({ active, revealed }: ServiceShowcaseProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
-  const tilt = useRef({ x: 0, y: 0, glowX: 0.5, glowY: 0.5 });
+  const tilt = useRef({ x: 0, y: 0 });
   const hoverEffects = useHoverEffects();
   const pointer = usePointer();
 
@@ -49,40 +48,48 @@ export function ServiceShowcase({ active, revealed }: ServiceShowcaseProps) {
     const t = tilt.current;
     t.x = approach(t.x, nx - 0.5, 0.08);
     t.y = approach(t.y, ny - 0.5, 0.08);
-    t.glowX = approach(t.glowX, nx, 0.1);
-    t.glowY = approach(t.glowY, ny, 0.1);
 
     panel.style.transform = `rotateY(${t.x * 7}deg) rotateX(${-t.y * 6}deg)`;
-    if (glowRef.current) {
-      glowRef.current.style.transform = `translate3d(${(t.glowX - 0.3) * box.width}px,${(t.glowY - 0.4) * box.height}px,0)`;
-    }
   }, revealed);
+
+  const current = SERVICES[active];
 
   return (
     <div
       className={cn(
-        "perspective-[1400px] nav:sticky nav:top-24 nav:mx-auto nav:w-full nav:max-w-[min(580px,66vh)]",
+        "perspective-[1400px] nav:sticky nav:top-28 nav:mx-auto nav:w-full nav:max-w-[min(580px,68vh)]",
         "transition-[opacity,translate] delay-300 duration-[1000ms,1200ms] ease-smooth",
         !revealed && "translate-y-[60px] opacity-0",
       )}
     >
       <div
         ref={panelRef}
-        className="relative aspect-[4/3.1] min-h-[250px] max-h-[calc(100vh-150px)] overflow-hidden rounded-md border border-ink/15 bg-[#0e0e11] text-white shadow-[0_24px_64px_rgba(11,11,12,0.18)] will-change-transform nav:min-h-[310px] nav:shadow-[0_32px_80px_rgba(11,11,12,0.22)]"
+        className="relative flex aspect-[4/3.1] min-h-[260px] max-h-[calc(100vh-140px)] flex-col overflow-hidden rounded-[16px] border border-ink/15 bg-[#08080c] text-paper shadow-[0_24px_64px_rgba(11,11,12,0.18)] will-change-transform nav:aspect-[4/3.35] nav:min-h-[440px] nav:shadow-[0_36px_80px_rgba(11,11,12,0.22)]"
       >
+        {/* Subtle 12-column blueprint grid */}
         <div
-          ref={glowRef}
           aria-hidden
-          className="pointer-events-none absolute top-0 left-0 aspect-square w-3/5 rounded-full bg-[radial-gradient(circle,rgba(245,117,30,.12),rgba(245,117,30,0)_65%)] will-change-transform"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:8.333%_100%]"
         />
 
-        {SLIDES.map((Slide, index) => (
-          <ShowcaseSlide key={index} active={index === active}>
-            <Slide active={index === active} />
-          </ShowcaseSlide>
-        ))}
+        {/* Top showcase status header */}
+        <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 nav:px-6 nav:py-4">
+          <span className="eyebrow-sm truncate text-white/70 nav:eyebrow">{current.panelLabel}</span>
+          <span className="eyebrow-sm shrink-0 text-brand tabular-nums nav:eyebrow">
+            {String(active + 1).padStart(2, "0")} / {String(SERVICES.length).padStart(2, "0")}
+          </span>
+        </div>
 
-        <div aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-line-soft">
+        {/* Animated slide viewport */}
+        <div className="relative flex-1">
+          {SLIDES.map((Slide, index) => (
+            <ShowcaseSlide key={index} active={index === active}>
+              <Slide active={index === active} />
+            </ShowcaseSlide>
+          ))}
+        </div>
+
+        <div aria-hidden className="absolute inset-x-0 top-0 z-20 h-0.5 bg-line-soft">
           <div
             className="h-full bg-brand transition-[width] duration-600 ease-smooth"
             style={{ width: `${((active + 1) / SERVICES.length) * 100}%` }}
@@ -99,7 +106,7 @@ function ShowcaseSlide({ active, children }: { active: boolean; children: ReactN
       aria-hidden={!active}
       inert={!active}
       className={cn(
-        "absolute inset-0 p-[8%] nav:p-[6%]",
+        "absolute inset-0 p-4 nav:p-6",
         "transition-[opacity,translate,scale,filter] duration-[600ms,900ms,900ms,600ms] ease-smooth",
         !active && "translate-y-7 scale-96 opacity-0 blur-sm",
       )}

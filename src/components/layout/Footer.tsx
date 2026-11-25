@@ -1,9 +1,10 @@
+import { ArrowUpIcon } from "@/components/ui/Icons";
 import { Logo } from "@/components/ui/Logo";
 import { CONTACT_EMAIL, NAV_LINKS } from "@/content/site";
 
 export function Footer() {
   return (
-    <footer className="eyebrow mt-auto flex flex-wrap items-center justify-between gap-6 border-t border-white/[0.08] py-7 text-muted">
+    <footer className="eyebrow mt-auto flex flex-wrap items-center justify-between gap-6 rounded-t-[16px] border-x border-t border-white/10 bg-[#0d0d11]/95 px-6 py-6 text-muted backdrop-blur-[10px]">
       <div className="flex items-center gap-4">
         <Logo height={28} />
         <span>© {new Date().getFullYear()} PG INŽENIRING</span>
@@ -30,8 +31,13 @@ export function Footer() {
         >
           {CONTACT_EMAIL}
         </a>
-        <a href="#domov" data-cursor="link" className="text-white transition-colors hover:text-brand">
-          NA VRH ↑
+        <a
+          href="#domov"
+          data-cursor="link"
+          className="inline-flex items-center gap-1.5 text-white transition-colors hover:text-brand"
+        >
+          <span>NA VRH</span>
+          <ArrowUpIcon size={14} className="text-brand" />
         </a>
       </div>
     </footer>

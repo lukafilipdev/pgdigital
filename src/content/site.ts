@@ -45,33 +45,42 @@ export const HERO_LAYERS = [
 export const SERVICES = [
   {
     name: "Spletno oblikovanje",
+    panelLabel: "TIPOGRAFSKI SISTEM · 12-STOLPČNA MREŽA",
     description:
       "Vizualni sistemi, tipografija in mreže, ki znamko naredijo prepoznavno na vsakem zaslonu.",
     tags: "UX · UI · VIZUALNI SISTEMI",
+    tagList: ["UX", "UI", "Vizualni sistemi"],
   },
   {
     name: "Spletni razvoj",
+    panelLabel: "KODA PO MERI · ODZIVNO",
     description:
       "Hitra, varna in razširljiva koda. Next.js, TypeScript in infrastruktura, ki zdrži rast.",
     tags: "NEXT.JS · TYPESCRIPT · CMS",
+    tagList: ["Next.js", "TypeScript", "CMS"],
   },
   {
     name: "E-commerce",
+    panelLabel: "SPLETNA TRGOVINA · NAKUPNI TOK",
     description: "Spletne trgovine, ki prodajajo — od izdelka do plačila brez ovir.",
-    tags: "TRGOVINA · PLAČILA · ZALOGA",
+    tags: "TRGOVINA · PLAČILA · DOSTAVA",
+    tagList: ["Trgovina", "Plačila", "Dostava"],
   },
   {
     name: "Vzdrževanje in optimizacija",
+    panelLabel: "ZDRAVJE STRANI · DNEVNIK",
     description:
       "Posodobitve, meritve in izboljšave po objavi. Stran ostane hitra in varna.",
-    tags: "HITROST · SEO · PODPORA",
+    tags: "VARNOST · SEO · HITROST",
+    tagList: ["Varnost", "SEO", "Hitrost"],
   },
 ] as const;
 
 export const QUALITY_METRICS = [
-  { value: 98, label: "HITROST" },
+  { value: 100, label: "HITROST" },
   { value: 100, label: "DOSTOPNOST" },
   { value: 100, label: "SEO" },
+  { value: 100, label: "PRAKSE" },
 ] as const;
 
 export type Project = {
@@ -81,6 +90,7 @@ export type Project = {
   category: string;
   year: string;
   services: string;
+  languages: string;
   summary: string;
   /** Short feature tags highlighted on the showcase card. */
   highlights: readonly string[];
@@ -125,9 +135,10 @@ export const PROJECTS: Project[] = [
     title: "Midnight Auto Studio",
     category: "SPLETNA STRAN",
     year: "2026",
-    services: "OBLIKOVANJE · RAZVOJ",
+    services: "Oblikovanje · Razvoj",
+    languages: "SL · EN · DE",
     summary:
-      "Spletna stran za butični studio zaščite in preobrazbe vozil BMW M, Audi RS in Porsche. Temna, filmska podoba postavi avtomobile v ospredje, pot do povpraševanja in rezervacije pa je kratka — v slovenščini, angleščini in nemščini.",
+      "Spletna stran za butični studio zaščite in preobrazbe vozil BMW M, Audi RS in Porsche. Temna, filmska podoba postavi avtomobile v ospredje, pot do povpraševanja in rezervacije pa je kratka.",
     highlights: ["SI · EN · DE", "FILMSKA PODOBA", "HITRA REZERVACIJA"],
     url: "https://www.midnightautostudio.com/",
     cardView: "desktop",
@@ -140,7 +151,8 @@ export const PROJECTS: Project[] = [
     title: "PG INŽENIRING",
     category: "SPLETNA STRAN",
     year: "2026",
-    services: "OBLIKOVANJE · RAZVOJ",
+    services: "Oblikovanje · Razvoj",
+    languages: "SL",
     summary:
       "Spletna stran za slovensko gradbeno podjetje, ki projekte vodi od projektiranja do gradnje in nadzora. Umirjena, arhitekturna podoba predstavi storitve jasno — na velikem zaslonu in na telefonu.",
     highlights: ["NAMIZNA + MOBILNA", "ARHITEKTURNI UX", "PREDOGLED V ŽIVO"],
@@ -163,6 +175,7 @@ export const PROCESS_STEPS = [
     name: "IDEJA",
     word: "Ideja in strategija.",
     timeline: "TEDEN 01",
+    col: "1 / 2",
     description:
       "Razumemo vaš posel, ciljno občinstvo in prodajni tok. Določimo jasno strukturo vsebine, ki obiskovalca vodi do povpraševanja.",
     deliverables: ["UVODNA DELAVNICA", "INFORMACIJSKA ARHITEKTURA", "NAČRT PROJEKTA"],
@@ -172,6 +185,7 @@ export const PROCESS_STEPS = [
     name: "OBLIKA",
     word: "Oblikovanje sistema.",
     timeline: "TEDEN 02–03",
+    col: "2 / 4",
     description:
       "Zasnujemo tipografijo, barvni sistem, interaktivne komponente in vizualno smer po meri vaše blagovne znamke — brez šablon.",
     deliverables: ["VIZUALNI SISTEM", "INTERAKTIVNI PROTOTIP", "MOBILNI PRIKAZ"],
@@ -181,6 +195,7 @@ export const PROCESS_STEPS = [
     name: "RAZVOJ",
     word: "Inženiring in razvoj.",
     timeline: "TEDEN 03–05",
+    col: "3 / 6",
     description:
       "Obliko pretvorimo v hitro, varno Next.js in TypeScript kodo z gibanjem pri 60 FPS, tehničnim SEO in čistim urejanjem vsebin.",
     deliverables: ["NEXT.JS + TYPESCRIPT", "ANIMACIJE 60 FPS", "TEHNIČNI SEO"],
@@ -190,6 +205,7 @@ export const PROCESS_STEPS = [
     name: "OBJAVA",
     word: "Objava in podpora.",
     timeline: "TEDEN 06",
+    col: "6 / 7",
     description:
       "Pred objavo preverimo hitrost, dostopnost in vse naprave. Stran postavimo v produkcijo ter skrbimo za posodobitve in rast.",
     deliverables: ["TESTIRANJE NA NAPRAVAH", "OBJAVA V PRODUKCIJO", "STALNA PODPORA"],

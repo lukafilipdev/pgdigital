@@ -36,7 +36,16 @@ const TOKEN = new RegExp(
 const KEYWORD = new RegExp(`^(?:${KEYWORDS})$`);
 const PUNCTUATION = /^[{}()=>;.,/]$/;
 
-function tokenColor(token: string) {
+function tokenColor(token: string, tone: "dark" | "light") {
+  if (tone === "light") {
+    if (token.startsWith("//")) return "rgba(185,73,12,.72)";
+    if (token[0] === '"' || token[0] === "'") return "rgba(11,11,12,.82)";
+    if (KEYWORD.test(token)) return "#c8520d";
+    if (token[0] === "<") return "#0b0b0c";
+    if (PUNCTUATION.test(token)) return "rgba(11,11,12,.3)";
+    if (/^\d/.test(token)) return "#b9490c";
+    return "rgba(11,11,12,.52)";
+  }
   if (token.startsWith("//")) return "rgba(245,117,30,.8)";
   if (token[0] === '"' || token[0] === "'") return "rgba(255,255,255,.95)";
   if (KEYWORD.test(token)) return BRAND;
@@ -47,12 +56,12 @@ function tokenColor(token: string) {
 }
 
 /** Repeating source columns cover the viewport, including both outer edges. */
-export function paintCode(pen: Pen, w: number, h: number) {
+export function paintCode(pen: Pen, w: number, h: number, tone: "dark" | "light" = "dark") {
   const { ctx } = pen;
-  ctx.fillStyle = "#050505";
+  ctx.fillStyle = tone === "light" ? "#ece8e0" : "#050507";
   ctx.fillRect(0, 0, w, h);
 
-  const fontSize = Math.max(11, Math.min(w, h) * 0.02);
+  const fontSize = Math.max(11, Math.min(w, h) * 0.018);
   const lineHeight = fontSize * 1.8;
   const columnWidth = fontSize * 38;
   ctx.font = `500 ${fontSize}px ${pen.fonts.mono}`;
@@ -65,14 +74,14 @@ export function paintCode(pen: Pen, w: number, h: number) {
     let line = 0;
     for (let y = fontSize * 2; y < h + lineHeight; y += lineHeight, line++) {
       ctx.textAlign = "right";
-      ctx.fillStyle = "rgba(255,255,255,.18)";
+      ctx.fillStyle = tone === "light" ? "rgba(11,11,12,.22)" : "rgba(255,255,255,.18)";
       ctx.fillText(String(line + 1), left - fontSize * 1.6, y);
       ctx.textAlign = "left";
-  
+
       let x = left;
       for (const token of CODE_LINES[(line + column * 7) % CODE_LINES.length].split(TOKEN)) {
         if (!token) continue;
-        ctx.fillStyle = tokenColor(token);
+        ctx.fillStyle = tokenColor(token, tone);
         ctx.fillText(token, x, y);
         x += ctx.measureText(token).width;
       }
@@ -81,6 +90,6 @@ export function paintCode(pen: Pen, w: number, h: number) {
   }
 
   // Highlight the "current" line.
-  ctx.fillStyle = "rgba(245,117,30,.07)";
+  ctx.fillStyle = tone === "light" ? "rgba(245,117,30,.08)" : "rgba(245,117,30,.07)";
   ctx.fillRect(0, fontSize * 2 + lineHeight * 12 - fontSize * 1.2, w, lineHeight);
 }

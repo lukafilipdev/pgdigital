@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ArrowRightIcon } from "@/components/ui/Icons";
 import { Logo } from "@/components/ui/Logo";
 import { NAV_LINKS, SECTION_IDS } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
@@ -11,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { clamp } from "@/lib/math";
 import { MobileMenu } from "./MobileMenu";
 
-const navText = "font-display text-[13.5px] font-bold tracking-[.06em]";
+const navText = "font-display text-[13px] font-semibold tracking-[.03em]";
 
 export function Header() {
   const scrolled = useScrolledPast(40);
@@ -45,11 +46,11 @@ export function Header() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 flex h-[72px] items-center justify-between gap-6 px-[clamp(18px,3vw,44px)] nav:h-[80px]",
+          "fixed inset-x-0 top-0 z-50 flex h-[72px] items-center justify-between gap-6 px-[clamp(18px,3vw,44px)] nav:h-[82px]",
           "border-b transition-[background-color,border-color,color,backdrop-filter] duration-500",
           !scrolled && "border-transparent bg-transparent",
-          scrolled && !isLight && "border-white/10 bg-black/78 backdrop-blur-[14px]",
-          scrolled && isLight && "border-ink-line bg-paper/90 backdrop-blur-[14px]",
+          scrolled && !isLight && "border-white/8 bg-black/72 backdrop-blur-[14px]",
+          scrolled && isLight && "border-ink-line bg-paper/88 backdrop-blur-[14px]",
         )}
       >
         <a
@@ -66,9 +67,15 @@ export function Header() {
           />
         </a>
 
+        {/* Floating architectural pill navigation container */}
         <nav
           aria-label="Glavna navigacija"
-          className="hidden items-center gap-[clamp(22px,2.8vw,38px)] nav:flex"
+          className={cn(
+            "hidden items-center gap-1 rounded-full border p-1.5 backdrop-blur-[12px] transition-[background-color,border-color] duration-400 nav:flex",
+            isLight
+              ? "border-ink/10 bg-white/65 shadow-[0_2px_12px_rgba(8,8,12,0.05)]"
+              : "border-white/10 bg-[#141416]/75 shadow-[0_4px_20px_rgba(0,0,0,0.35)]",
+          )}
         >
           {NAV_LINKS.map(({ id, label }) => {
             const isActive = id === activeId;
@@ -80,27 +87,17 @@ export function Header() {
                 aria-current={isActive ? "location" : undefined}
                 className={cn(
                   navText,
-                  "group relative flex items-center py-2 transition-colors duration-350 ease-smooth",
+                  "relative flex items-center gap-2 rounded-full px-4 py-2 transition-[background-color,color,box-shadow] duration-300 ease-smooth",
                   isLight
                     ? isActive
-                      ? "font-extrabold text-ink"
-                      : "text-ink/65 hover:text-ink focus-visible:text-ink"
+                      ? "bg-white font-bold text-ink shadow-[0_1px_3px_rgba(8,8,12,0.1)]"
+                      : "text-ink/65 hover:bg-ink/[0.04] hover:text-ink focus-visible:text-ink"
                     : isActive
-                      ? "font-extrabold text-white"
-                      : "text-white/70 hover:text-white focus-visible:text-white",
+                      ? "bg-white/[0.11] font-bold text-white"
+                      : "text-white/68 hover:bg-white/[0.05] hover:text-white focus-visible:text-white",
                 )}
               >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "absolute top-1/2 -left-[12px] size-1.5 -translate-y-1/2 rounded-full transition-[scale,background-color] duration-350 ease-smooth",
-                    isActive
-                      ? "scale-100 bg-brand"
-                      : isLight
-                        ? "scale-0 bg-ink/45 group-hover:scale-100 group-focus-visible:scale-100"
-                        : "scale-0 bg-white/50 group-hover:scale-100 group-focus-visible:scale-100",
-                  )}
-                />
+                {isActive && <span aria-hidden className="size-1.5 rounded-full bg-brand" />}
                 {label}
               </a>
             );
@@ -128,12 +125,10 @@ export function Header() {
             className="relative inline-flex items-center gap-2 transition-colors duration-300 group-hover:text-black group-focus-visible:text-black"
           >
             ZAČNIMO PROJEKT
-            <span
-              aria-hidden
-              className="inline-block transition-transform duration-500 ease-smooth group-hover:translate-x-[5px] group-focus-visible:translate-x-[5px]"
-            >
-              →
-            </span>
+            <ArrowRightIcon
+              size={15}
+              className="transition-transform duration-500 ease-smooth group-hover:translate-x-[4px] group-focus-visible:translate-x-[4px]"
+            />
           </span>
         </a>
 
@@ -160,7 +155,9 @@ export function Header() {
         />
       </header>
 
-      {menuOpen && !isDesktop && <MobileMenu onClose={() => setMenuOpen(false)} />}
+      {menuOpen && !isDesktop && (
+        <MobileMenu activeId={activeId} onClose={() => setMenuOpen(false)} />
+      )}
     </>
   );
 }

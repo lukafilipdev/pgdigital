@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ArrowRightIcon, CheckIcon } from "@/components/ui/Icons";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { cn } from "@/lib/cn";
 
@@ -74,14 +75,28 @@ export function ShopSlide() {
           data-cursor="link"
           onClick={handleAdd}
           className={cn(
-            "eyebrow-sm flex h-[40px] cursor-pointer items-center justify-center rounded-full font-bold transition-colors duration-300 sm:eyebrow sm:h-[46px]",
+            "eyebrow-sm flex h-[40px] cursor-pointer items-center justify-center gap-2 rounded-full font-bold transition-colors duration-300 sm:eyebrow sm:h-[46px]",
             justAdded ? "bg-white text-black" : "bg-brand text-black hover:bg-brand-light",
           )}
         >
-          {justAdded ? `DODANO (${selectedSize}) ✓` : "V KOŠARICO →"}
+          {justAdded ? (
+            <>
+              <span>DODANO ({selectedSize})</span>
+              <CheckIcon size={14} />
+            </>
+          ) : (
+            <>
+              <span>V KOŠARICO</span>
+              <ArrowRightIcon size={14} />
+            </>
+          )}
         </button>
-        <div className="font-mono text-[9px] font-semibold tracking-[.11em] text-muted sm:eyebrow-sm sm:whitespace-nowrap">
-          PLAČILO · DOSTAVA · ZALOGA
+        <div className="flex items-center gap-1.5 font-mono text-[9px] font-semibold tracking-[.1em] text-muted sm:eyebrow-sm">
+          <span className="text-brand">KOŠARICA</span>
+          <ArrowRightIcon size={11} className="text-white/35" />
+          <span>DOSTAVA</span>
+          <ArrowRightIcon size={11} className="text-white/35" />
+          <span>PLAČILO</span>
         </div>
       </div>
     </div>

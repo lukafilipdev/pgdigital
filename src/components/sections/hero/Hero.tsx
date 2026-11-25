@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { useIntro } from "@/components/intro/IntroProvider";
+import { ArrowRightIcon } from "@/components/ui/Icons";
 import { Kicker } from "@/components/ui/Kicker";
-import { HERO_LAYERS } from "@/content/site";
+import { HERO_LAYERS, PROJECTS, projectScreenshot } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
 import { useInViewport } from "@/hooks/useInView";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
@@ -79,6 +81,9 @@ export function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const visualCardRef = useRef<HTMLDivElement>(null);
+  const introWrapRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const lineInnerRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const ruleRefs = useRef<(HTMLSpanElement | null)[]>([]);
@@ -214,8 +219,10 @@ export function Hero() {
 
     const grow = reducedMotion ? 1 : introT < 0 ? 0 : easeOutQuart((introT + 0.25) / 1.6);
     const breathe = reducedMotion ? 1 : 1 + 0.035 * Math.sin(t * 1.1);
+    // Active behind Hero and returns behind O nas (staying clear during the 4-layer build animations).
+    const lensPresence = Math.max(1 - open, outro * 0.92);
     const lensRadius =
-      (scene.mobile ? Math.min(W * 0.25, H * 0.14) : Math.min(W, H) * 0.25) * grow * breathe * (1 - open) * (1 + s.pulse * 0.22);
+      (scene.mobile ? Math.min(W * 0.25, H * 0.14) : Math.min(W, H) * 0.25) * grow * breathe * lensPresence * (1 + s.pulse * 0.22);
 
     scene.render({
       t,
@@ -267,10 +274,25 @@ export function Hero() {
 
     const introElapsed = Math.max(0, introT);
     const introIn = (from: number, to: number) => (reducedMotion ? 1 : smoothstep(from, to, introElapsed));
-    setStyle(kickerRef, "opacity", introIn(0.5, 1.3) * (1 - smoothstep(0, 0.06, P)));
-    const description = introIn(1, 1.8);
-    setStyle(descriptionRef, "opacity", description * (1 - smoothstep(0.015, 0.06, P)));
+    const introExit = 1 - smoothstep(0.015, 0.08, P);
+    setStyle(kickerRef, "opacity", introIn(0.4, 1.1) * (1 - smoothstep(0, 0.06, P)));
+    const description = introIn(0.85, 1.55);
+    setStyle(descriptionRef, "opacity", description * introExit);
     setStyle(descriptionRef, "transform", `translate3d(0,${(1 - description) * 10}px,0)`);
+    const actionsIn = introIn(1.0, 1.7);
+    setStyle(actionsRef, "opacity", actionsIn * introExit);
+    setStyle(actionsRef, "transform", `translate3d(0,${(1 - actionsIn) * 12}px,0)`);
+    const visualIn = introIn(0.75, 1.6);
+    const visualOpacity = visualIn * (1 - smoothstep(0.02, 0.11, P));
+    setStyle(visualCardRef, "opacity", visualOpacity);
+    setStyle(
+      visualCardRef,
+      "transform",
+      `translate3d(${(-s.mouse.x * 10 * motion).toFixed(2)}px,${((1 - visualIn) * 26 + open * -34 - s.mouse.y * 8 * motion).toFixed(2)}px,0)`,
+    );
+    if (introWrapRef.current) {
+      introWrapRef.current.style.pointerEvents = P > 0.07 ? "none" : "";
+    }
     setStyle(metaRef, "opacity", introIn(0.9, 1.6) * (1 - outro));
     setStyle(hintRef, "opacity", 1 - smoothstep(0.01, 0.06, P));
     setStyle(xrayLabelRef, "opacity", introIn(0.5, 1.3) * (1 - smoothstep(0, 0.1, P)));
@@ -337,7 +359,10 @@ export function Hero() {
         <canvas ref={canvasRef} aria-hidden className="absolute inset-0 block size-full" />
         <HeroLayerStack ref={layerStackRef} />
 
-        <div className="hero-intro pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4">
+        <div
+          ref={introWrapRef}
+          className="hero-intro pointer-events-none absolute inset-0 flex items-center px-[clamp(18px,3.6vw,56px)] pt-[82px] pb-[64px]"
+        >
           <div aria-hidden className="absolute inset-x-0 top-0">
             {HEADLINE.map((_, i) => (
               <span
@@ -355,43 +380,153 @@ export function Hero() {
               />
             ))}
           </div>
-          <Kicker
-            ref={kickerRef}
-            left="PG INŽENIRING / DIGITALNI STUDIO"
-            right="SPLETNO OBLIKOVANJE IN RAZVOJ"
-            className="hero-kicker mb-[clamp(20px,3.2vh,36px)] rounded-md bg-black/72 px-4 py-1.5 text-white/95 opacity-0 backdrop-blur-[6px] sm:rounded-full"
-          />
-          <h1
-            aria-label="Spletna stran, ki si jo vaša znamka zasluži."
-            className="text-center text-[clamp(44px,8.4vw,168px)] leading-[.92] font-extrabold tracking-[-.048em] drop-shadow-[0_4px_26px_rgba(0,0,0,0.96)]"
-          >
-            {HEADLINE.map((line, i) => (
-              <span
-                key={i}
-                ref={(el) => {
-                  lineRefs.current[i] = el;
-                }}
-                aria-hidden
-                className="block overflow-hidden px-[.04em] pb-[.06em] will-change-transform"
+
+          <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-10 nav:grid-cols-[minmax(0,1.2fr)_minmax(0,0.92fr)] nav:gap-[clamp(36px,4.5vw,76px)]">
+            {/* Left Column: Pulsing studio kicker, monumental display H1, subtitle, and dual CTA pills */}
+            <div className="flex min-w-0 flex-col items-start gap-[clamp(18px,2.8vh,30px)]">
+              <div
+                ref={kickerRef}
+                className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/68 px-4 py-2 font-mono text-[11px] font-medium tracking-[.14em] uppercase text-white/85 opacity-0 backdrop-blur-[8px]"
               >
                 <span
-                  ref={(el) => {
-                    lineInnerRefs.current[i] = el;
-                  }}
-                  className="block"
-                  style={{ transform: "translateY(110%)" }}
+                  aria-hidden
+                  className="size-2 shrink-0 rounded-full bg-brand animate-pg-pulse motion-reduce:animate-none"
+                />
+                <span>PG INŽENIRING — DIGITALNI STUDIO</span>
+              </div>
+
+              <h1
+                aria-label="Spletna stran, ki si jo vaša znamka zasluži."
+                className="text-left text-[clamp(44px,11.5vw,66px)] leading-[.92] font-extrabold tracking-[-.048em] drop-shadow-[0_4px_26px_rgba(0,0,0,0.96)] nav:text-[clamp(56px,6.2vw,112px)]"
+              >
+                {HEADLINE.map((line, i) => (
+                  <span
+                    key={i}
+                    ref={(el) => {
+                      lineRefs.current[i] = el;
+                    }}
+                    aria-hidden
+                    className="block overflow-hidden pr-[.06em] pb-[.06em] will-change-transform"
+                  >
+                    <span
+                      ref={(el) => {
+                        lineInnerRefs.current[i] = el;
+                      }}
+                      className="block"
+                      style={{ transform: "translateY(110%)" }}
+                    >
+                      {line}
+                    </span>
+                  </span>
+                ))}
+              </h1>
+
+              <p
+                ref={descriptionRef}
+                className="hero-description max-w-[500px] rounded-xl bg-black/62 px-4 py-2.5 text-[clamp(15px,1.35vw,19.5px)] leading-[1.5] text-pretty text-white/82 opacity-0 backdrop-blur-[6px]"
+              >
+                Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati — od prve
+                skice do lansiranja.
+              </p>
+
+              <div
+                ref={actionsRef}
+                className="pointer-events-auto flex flex-wrap items-center gap-3 pt-1 opacity-0"
+              >
+                <a
+                  href="#kontakt"
+                  data-cursor="link"
+                  className="group inline-flex h-[52px] items-center gap-2.5 rounded-full bg-brand px-7 font-display text-[15px] font-extrabold text-[#08080c] transition-colors duration-300 hover:bg-white"
                 >
-                  {line}
-                </span>
-              </span>
-            ))}
-          </h1>
-          <p
-            ref={descriptionRef}
-            className="hero-description mt-[clamp(18px,3vh,34px)] max-w-[560px] rounded-md bg-black/72 px-5 py-2 text-center text-[15.5px] leading-normal font-medium text-pretty text-white/95 opacity-0 backdrop-blur-[6px] sm:rounded-full"
-          >
-            Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati.
-          </p>
+                  <span>Začnimo projekt</span>
+                  <ArrowRightIcon
+                    size={16}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </a>
+                <a
+                  href="#projekti"
+                  data-cursor="link"
+                  className="inline-flex h-[52px] items-center gap-2 rounded-full border border-white/24 bg-black/55 px-7 font-display text-[15px] font-bold text-white backdrop-blur-[6px] transition-colors duration-300 hover:border-white hover:bg-white/10"
+                >
+                  Oglejte si projekte
+                </a>
+              </div>
+            </div>
+
+            {/* Right Column (Desktop): Featured project browser preview + floating <Hero /> code snippet */}
+            <div
+              ref={visualCardRef}
+              className="pointer-events-auto relative hidden pb-11 pl-6 opacity-0 will-change-transform nav:block"
+            >
+              <a
+                href="#projekti"
+                data-cursor="view"
+                data-cursor-label="PROJEKTI"
+                aria-label={`Oglejte si izbrani projekt ${PROJECTS[0].title}`}
+                className="group relative block overflow-hidden rounded-[16px] border border-white/14 bg-[#141418] shadow-[0_38px_80px_rgba(0,0,0,0.62)] transition-[border-color,box-shadow] duration-500 hover:border-brand/50"
+              >
+                <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3">
+                  <div className="flex gap-1.5">
+                    <span className="size-2.5 rounded-full bg-white/18" />
+                    <span className="size-2.5 rounded-full bg-white/18" />
+                    <span className="size-2.5 rounded-full bg-white/18" />
+                  </div>
+                  <div className="flex flex-1 justify-center">
+                    <span className="rounded-full bg-[#08080c] px-3.5 py-1 font-mono text-[11px] text-white/60">
+                      midnightautostudio.com
+                    </span>
+                  </div>
+                  <span className="w-10" />
+                </div>
+                <div className="relative aspect-[4/2.9] overflow-hidden bg-black">
+                  <Image
+                    src={projectScreenshot(PROJECTS[0].slug, "card")}
+                    alt={`Predogled projekta ${PROJECTS[0].title}`}
+                    fill
+                    priority
+                    sizes="42vw"
+                    className="object-cover object-top transition-transform duration-700 ease-smooth group-hover:scale-[1.03]"
+                  />
+                </div>
+              </a>
+
+              {/* Floating orange pill tag */}
+              <div className="pointer-events-none absolute -top-3.5 right-5 flex items-center gap-2 rounded-full bg-brand px-3.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[.12em] uppercase text-[#08080c] shadow-[0_12px_28px_rgba(245,117,30,0.35)]">
+                IZBRANI PROJEKT · 01
+              </div>
+
+              {/* Floating frosted JSX code card with blinking cursor */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-0 w-[min(295px,82%)] rounded-[12px] border border-white/14 bg-[#0d0d10]/92 px-5 py-4 font-mono text-[12.5px] leading-[1.75] shadow-[0_24px_48px_rgba(0,0,0,0.65)] backdrop-blur-[12px]"
+              >
+                <div className="flex gap-3.5">
+                  <span className="text-white/28">1</span>
+                  <span className="text-white">&lt;Hero</span>
+                </div>
+                <div className="flex gap-3.5">
+                  <span className="text-white/28">2</span>
+                  <span className="pl-4 text-muted">
+                    naslov=<span className="text-brand">&quot;Vaša znamka&quot;</span>
+                  </span>
+                </div>
+                <div className="flex gap-3.5">
+                  <span className="text-white/28">3</span>
+                  <span className="pl-4 text-muted">
+                    cilj=<span className="text-brand">&quot;izstopati&quot;</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-3.5">
+                  <span className="text-white/28">4</span>
+                  <span className="inline-flex items-center text-white">
+                    /&gt;
+                    <span className="ml-1.5 inline-block h-[14px] w-[7px] bg-brand animate-pg-blink motion-reduce:animate-none" />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div ref={xrayLabelRef} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[12%] text-center font-mono text-[10px] tracking-[.2em] text-brand opacity-0 nav:hidden">
