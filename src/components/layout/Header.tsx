@@ -275,46 +275,39 @@ export function Header() {
             </span>
           </a>
 
-          {/* Right: Modern Morphing Mobile Menu Button */}
+          {/* Right: Morphing Editorial Mobile MENI / ZAPRI Pill */}
           <button
             type="button"
             onClick={() => setMenuOpen((prev) => !prev)}
             aria-label={mobileMenuActive ? "Zapri meni" : "Odpri meni"}
             aria-expanded={mobileMenuActive}
             className={cn(
-              "relative inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[background-color,border-color,transform] duration-400 ease-smooth active:scale-92 nav:hidden",
+              "inline-flex h-12 shrink-0 cursor-pointer items-center gap-3 rounded-full border pr-[18px] pl-5 font-display text-[13px] font-extrabold tracking-[.08em] transition-[background-color,color,border-color,transform] duration-400 ease-smooth active:scale-95 nav:hidden",
               mobileMenuActive
-                ? "border-brand/60 bg-brand/12 text-white"
+                ? "border-white/18 bg-transparent text-white hover:border-brand"
                 : !scrolled
-                  ? "border-white/20 bg-transparent text-white hover:border-brand"
+                  ? "border-white/18 bg-transparent text-white hover:border-brand"
                   : isLight
-                    ? "border-ink/14 bg-white/80 text-ink hover:border-ink/40"
-                    : "border-white/16 bg-[#0e0e0e]/80 text-white hover:border-brand",
+                    ? "border-ink/10 bg-white/75 text-ink hover:border-ink/35"
+                    : "border-white/14 bg-[#0e0e0e]/75 text-white hover:border-brand",
             )}
           >
-            <span aria-hidden className="relative flex size-5 items-center justify-center">
+            <span>{mobileMenuActive ? "ZAPRI" : "MENI"}</span>
+            <span aria-hidden className="relative flex h-4 w-[18px] items-center justify-end">
               <span
                 className={cn(
-                  "absolute h-[1.8px] rounded-full transition-all duration-400 ease-smooth",
+                  "absolute h-[1.5px] rounded-full transition-all duration-400 ease-smooth",
                   mobileMenuActive
-                    ? "w-[18px] translate-y-0 rotate-45 bg-brand"
-                    : "w-[18px] -translate-y-[4.5px] bg-current",
+                    ? "w-[16px] translate-y-0 rotate-45 bg-brand"
+                    : "w-[18px] -translate-y-[3.25px] bg-current",
                 )}
               />
               <span
                 className={cn(
-                  "absolute h-[1.8px] rounded-full transition-all duration-300 ease-smooth",
+                  "absolute h-[1.5px] rounded-full bg-brand transition-all duration-400 ease-smooth",
                   mobileMenuActive
-                    ? "w-0 opacity-0 bg-white"
-                    : "w-[10px] translate-x-[4px] translate-y-0 bg-brand opacity-100",
-                )}
-              />
-              <span
-                className={cn(
-                  "absolute h-[1.8px] rounded-full transition-all duration-400 ease-smooth",
-                  mobileMenuActive
-                    ? "w-[18px] translate-y-0 -rotate-45 bg-white"
-                    : "w-[18px] translate-y-[4.5px] bg-current",
+                    ? "w-[16px] translate-y-0 -rotate-45"
+                    : "w-[12px] translate-y-[3.25px]",
                 )}
               />
             </span>

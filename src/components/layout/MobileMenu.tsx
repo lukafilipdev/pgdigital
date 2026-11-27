@@ -2,7 +2,6 @@
 
 import { useEffect, useEffectEvent } from "react";
 import { ArrowRightIcon } from "@/components/ui/Icons";
-import { CONTACT_EMAIL } from "@/content/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { cn } from "@/lib/cn";
 
@@ -41,92 +40,69 @@ export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
       aria-hidden={!open}
       aria-label="Meni"
       className={cn(
-        "fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black/96 px-[clamp(20px,5.5vw,32px)] pt-[88px] pb-[max(26px,env(safe-area-inset-bottom))] text-white backdrop-blur-2xl",
+        "fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black px-[clamp(18px,3vw,64px)] pt-[92px] pb-[max(32px,env(safe-area-inset-bottom))] text-white",
         "transition-[clip-path,opacity] duration-550 ease-smooth",
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
       )}
       style={{
         clipPath: open
-          ? "circle(150% at calc(100% - 40px) 40px)"
-          : "circle(0% at calc(100% - 40px) 40px)",
+          ? "circle(155% at calc(100% - 58px) 42px)"
+          : "circle(0% at calc(100% - 58px) 42px)",
       }}
     >
-      <div className="h-px w-full shrink-0 bg-white/10" />
+      {/* Monumental Editorial Navigation List (Navbar_Mobile inspiration, zero numbering) */}
+      <nav aria-label="Meni" className="flex flex-1 flex-col justify-center gap-1.5 py-6">
+        {MENU_ITEMS.map(({ id, label }, index) => {
+          const isActive = id === activeId;
+          return (
+            <a
+              key={id}
+              href={`#${id}`}
+              tabIndex={open ? 0 : -1}
+              onClick={onClose}
+              aria-current={isActive ? "location" : undefined}
+              style={{
+                transitionDelay: open ? `${70 + index * 40}ms` : "0ms",
+              }}
+              className={cn(
+                "group flex items-baseline justify-between gap-4 border-b border-white/[0.08] py-2 font-display text-[clamp(40px,11.5vw,64px)] leading-[1.06] font-extrabold tracking-[-.045em]",
+                "transition-[opacity,transform,color] duration-500 ease-smooth",
+                open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+                isActive ? "text-brand" : "text-white hover:text-brand",
+              )}
+            >
+              <span className="inline-flex items-center gap-3.5">
+                {isActive && <span aria-hidden className="size-2 shrink-0 rounded-full bg-brand" />}
+                <span>{label}</span>
+              </span>
 
-      {/* Clean Editorial Staggered Navigation List */}
-      <nav aria-label="Meni" className="my-auto py-5">
-        <div className="flex flex-col divide-y divide-white/[0.08]">
-          {MENU_ITEMS.map(({ id, label }, index) => {
-            const isActive = id === activeId;
-            return (
-              <a
-                key={id}
-                href={`#${id}`}
-                tabIndex={open ? 0 : -1}
-                onClick={onClose}
-                aria-current={isActive ? "location" : undefined}
-                style={{
-                  transitionDelay: open ? `${80 + index * 45}ms` : "0ms",
-                }}
+              <ArrowRightIcon
+                size={20}
                 className={cn(
-                  "group flex items-center justify-between gap-4 py-3.5 transition-[opacity,transform,color] duration-500 ease-smooth",
-                  open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+                  "shrink-0 transition-transform duration-300 group-hover:translate-x-1",
+                  isActive ? "text-brand" : "text-white/20 group-hover:text-brand",
                 )}
-              >
-                <span className="flex items-center gap-3">
-                  {isActive && <span aria-hidden className="size-2 shrink-0 rounded-full bg-brand" />}
-                  <span
-                    className={cn(
-                      "font-display text-[clamp(32px,9.5vw,52px)] leading-none font-extrabold tracking-[-.045em] transition-colors duration-300",
-                      isActive ? "text-brand" : "text-white group-hover:text-brand",
-                    )}
-                  >
-                    {label}
-                  </span>
-                </span>
-
-                <ArrowRightIcon
-                  size={18}
-                  className={cn(
-                    "shrink-0 transition-transform duration-300 group-hover:translate-x-1",
-                    isActive ? "text-brand" : "text-white/25 group-hover:text-brand",
-                  )}
-                />
-              </a>
-            );
-          })}
-        </div>
+              />
+            </a>
+          );
+        })}
       </nav>
 
-      {/* Bottom Studio Contact & Primary CTA */}
-      <div
-        style={{ transitionDelay: open ? "340ms" : "0ms" }}
+      {/* Full-Width Primary Orange CTA */}
+      <a
+        href="#kontakt"
+        tabIndex={open ? 0 : -1}
+        onClick={onClose}
+        style={{ transitionDelay: open ? "310ms" : "0ms" }}
         className={cn(
-          "flex shrink-0 flex-col gap-4 border-t border-white/10 pt-5 transition-[opacity,transform] duration-500 ease-smooth",
+          "flex min-h-[56px] shrink-0 items-center justify-center gap-2.5 rounded-full bg-brand font-display text-[16px] font-extrabold text-black",
+          "transition-[opacity,transform,background-color] duration-500 ease-smooth hover:bg-white",
           open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
         )}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10.5px] tracking-[.12em] text-white/60">
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            tabIndex={open ? 0 : -1}
-            className="text-white/80 transition-colors hover:text-brand"
-          >
-            {CONTACT_EMAIL}
-          </a>
-          <span className="text-white/65">ODZIV V 24 URAH</span>
-        </div>
-
-        <a
-          href="#kontakt"
-          tabIndex={open ? 0 : -1}
-          onClick={onClose}
-          className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-brand font-display text-[15.5px] font-extrabold text-black transition-colors hover:bg-white"
-        >
-          <span>Začnimo projekt</span>
-          <ArrowRightIcon size={16} />
-        </a>
-      </div>
+        <span>Začnimo projekt</span>
+        <ArrowRightIcon size={17} />
+      </a>
     </div>
   );
 }
