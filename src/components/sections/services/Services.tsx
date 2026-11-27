@@ -198,9 +198,7 @@ export function Services() {
         {/* Section Header */}
         <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-5">
           <div className="flex flex-col gap-4">
-            <SectionLabel icon={<DesignSystemIcon size={14} />} tone="light">
-              STORITVE
-            </SectionLabel>
+            <SectionLabel tone="light">STORITVE</SectionLabel>
             <h2
               id="storitve-h"
               className="m-0 overflow-hidden pb-[.06em] font-display text-[clamp(48px,6.4vw,120px)] leading-[.9] font-extrabold tracking-[-.055em] text-ink"
@@ -277,13 +275,11 @@ export function Services() {
                 <div className="grid grid-cols-[clamp(38px,5vw,96px)_minmax(0,1fr)_auto] items-start gap-3">
                   <span
                     className={cn(
-                      "mt-1 inline-flex size-9 items-center justify-center rounded-xl border transition-colors duration-300 nav:mt-2 nav:size-11",
-                      isActive
-                        ? "border-brand bg-brand/12 text-brand"
-                        : "border-ink/12 bg-ink/[0.03] text-ink-muted",
+                      "pt-[0.35em] transition-colors duration-300",
+                      isActive ? "text-brand" : "text-ink-muted",
                     )}
                   >
-                    <cfg.Icon size={18} />
+                    <cfg.Icon size={20} />
                   </span>
 
                   <div data-tcol="" className="min-w-0">

@@ -9,6 +9,7 @@ import {
   paintHighCraftForm,
   paintHighCraftSite,
   paintHighCraftStructure,
+  type SiteMediaAssets,
   TEX_H,
   TEX_W,
 } from "./textures/highCraftTextures";
@@ -156,6 +157,7 @@ export class WebGLLayerStack {
   private caretVisible = false;
   private readonly projected: Projected = [0, 0, 0];
   private disposed = false;
+  private readonly media: SiteMediaAssets = { cards: [] };
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -219,6 +221,7 @@ export class WebGLLayerStack {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
     this.initStaticTextures();
+    this.loadSiteMedia();
   }
 
   get supported() {
@@ -253,7 +256,11 @@ export class WebGLLayerStack {
     this.textures[0] = this.uploadTexture(this.textures[0], this.codeCanvas);
 
     // Planes 1–3 painted at 2048×1280 (2× supersampled)
-    const painters: ((pen: Pen) => void)[] = [paintHighCraftStructure, paintHighCraftForm, paintHighCraftSite];
+    const painters: ((pen: Pen) => void)[] = [
+      paintHighCraftStructure,
+      paintHighCraftForm,
+      (pen) => paintHighCraftSite(pen, this.media),
+    ];
     painters.forEach((painter, idx) => {
       const layer = createLayer(1024, 640, 2);
       painter(new Pen(layer.ctx, this.fonts));
@@ -265,6 +272,42 @@ export class WebGLLayerStack {
     const chromeLayer = createLayer(1024, chromeH, 2);
     paintBrowserChrome(new Pen(chromeLayer.ctx, this.fonts), 1024, chromeH);
     this.chromeTex = this.uploadTexture(this.chromeTex, chromeLayer.canvas);
+  }
+
+  private repaintSiteTexture() {
+    if (!this.gl || this.disposed) return;
+    const layer = createLayer(1024, 640, 2);
+    paintHighCraftSite(new Pen(layer.ctx, this.fonts), this.media);
+    this.textures[3] = this.uploadTexture(this.textures[3], layer.canvas);
+  }
+
+  private loadSiteMedia() {
+    if (typeof window === "undefined") return;
+    const loadImg = (src: string, onReady: (img: HTMLImageElement) => void) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => {
+        if (this.disposed) return;
+        onReady(img);
+        this.repaintSiteTexture();
+      };
+      img.src = src;
+    };
+
+    loadImg("/images/hero-stack/hero-architecture.jpg", (img) => {
+      this.media.hero = img;
+    });
+    const cardSources = [
+      "/images/hero-stack/card-service.jpg",
+      "/images/hero-stack/card-product.jpg",
+      "/images/hero-stack/card-reference.jpg",
+    ];
+    cardSources.forEach((src, idx) => {
+      loadImg(src, (img) => {
+        if (!this.media.cards) this.media.cards = [];
+        this.media.cards[idx] = img;
+      });
+    });
   }
 
   private uploadTexture(existing: WebGLTexture | null, source: HTMLCanvasElement): WebGLTexture | null {

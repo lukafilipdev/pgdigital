@@ -3,6 +3,40 @@ import { BRAND, MUTED, TAU, type Pen, type TextStyle } from "../pen";
 export const TEX_W = 2048;
 export const TEX_H = 1280;
 
+export type SiteMediaAssets = {
+  hero?: HTMLImageElement;
+  cards?: (HTMLImageElement | undefined)[];
+};
+
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radius: number,
+) {
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return false;
+
+  const scale = Math.max(w / iw, h / ih);
+  const sw = w / scale;
+  const sh = h / scale;
+  const sx = (iw - sw) / 2;
+  const sy = (ih - sh) / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, radius);
+  else ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  ctx.restore();
+  return true;
+}
+
 type CodeToken = {
   text: string;
   tone: "keyword" | "plain" | "accent" | "comment" | "string";
@@ -309,7 +343,7 @@ export function paintHighCraftStructure(pen: Pen) {
   const hy = 122;
   const hw = 370;
   const hh = 178;
-  box(hx, hy, hw, hh, "NASLOV · GEIST 800", true);
+  box(hx, hy, hw, hh, "NASLOV · BRICOLAGE 800", true);
   ["Tu stoji", "vaša", "zgodba"].forEach((line, k) => {
     pen.text(line, hx + 18, hy + 52 + k * 48, {
       size: 50,
@@ -472,7 +506,7 @@ export function paintHighCraftForm(pen: Pen) {
     pen.text(text, x, y, { size: 11, weight: 700, color, tracking: 0.16, mono: true, align });
 
   label("OBLIKOVNI SISTEM", m, 44);
-  label("VAŠA ZNAMKA — V1.0", W - m, 44, MUTED, "right");
+  label("VAŠA ZNAMKA · V1.0", W - m, 44, MUTED, "right");
   ctx.fillStyle = "rgba(255,255,255,0.12)";
   ctx.fillRect(m, 58, W - m * 2, 1.5);
 
@@ -482,8 +516,8 @@ export function paintHighCraftForm(pen: Pen) {
 
   // Typeface specimen
   pen.text("Aa", m - 8, 232, { size: 148, weight: 800, color: "#fff", tracking: -0.065 });
-  pen.text("Geist", m, 272, { size: 24, weight: 700, color: "#fff", tracking: -0.03 });
-  label("VARIABILNA · 400 — 800", m, 294);
+  pen.text("Bricolage", m, 272, { size: 24, weight: 700, color: "#fff", tracking: -0.03 });
+  label("VARIABILNA · 400 DO 800", m, 294);
   [400, 500, 700, 800].forEach((weight, k) => {
     const wx = m + k * 62;
     pen.text("Ag", wx, 348, { size: 32, weight, color: k === 3 ? BRAND : "#fff", tracking: -0.03 });
@@ -521,9 +555,9 @@ export function paintHighCraftForm(pen: Pen) {
   // Swatches
   const swatches = [
     { color: "#000000", name: "Črna", hex: "#000000", outlined: true },
-    { color: "#FFFFFF", name: "Bela", hex: "#FFFFFF", outlined: false },
+    { color: "#F4F1EC", name: "Topli kamen", hex: "#F4F1EC", outlined: false },
     { color: "#F5751E", name: "PG oranžna", hex: "#F5751E", outlined: false },
-    { color: "#171717", name: "Grafit", hex: "#171717", outlined: true },
+    { color: "#141414", name: "Grafit", hex: "#141414", outlined: true },
   ];
   swatches.forEach((s, k) => {
     const cx = 768 + (k % 2) * 124;
@@ -627,7 +661,7 @@ export function paintHighCraftForm(pen: Pen) {
  * Layer 04 — IZKUŠNJA / REZULTAT: Editorial dark website with minimalist architectural
  * pavilion art, distinct card thumbnails, and optional browser chrome.
  */
-export function paintHighCraftSite(pen: Pen) {
+export function paintHighCraftSite(pen: Pen, media?: SiteMediaAssets) {
   const { ctx } = pen;
   const W = 1024;
   const H = 640;
@@ -716,36 +750,45 @@ export function paintHighCraftSite(pen: Pen) {
 
   paintArrowPointer(ctx, m + btnW - 22, btnY + btnH - 12);
 
-  // Right hero architectural artwork
+  // Right hero architectural artwork (uses bespoke architectural photograph when loaded)
   const artX = 532;
   const artY = 114;
   const artW = W - m - artX;
   const artH = 350;
-  paintArchitecturalPavilion(ctx, artX, artY, artW, artH);
+  const drewHeroPhoto = media?.hero && drawCoverImage(ctx, media.hero, artX, artY, artW, artH, 6);
+  if (!drewHeroPhoto) {
+    paintArchitecturalPavilion(ctx, artX, artY, artW, artH);
+  }
 
   // Bottom vignette + caption over hero artwork
-  const capGrad = ctx.createLinearGradient(0, artY + artH - 80, 0, artY + artH);
+  const capGrad = ctx.createLinearGradient(0, artY + artH - 96, 0, artY + artH);
   capGrad.addColorStop(0, "rgba(0,0,0,0)");
-  capGrad.addColorStop(1, "rgba(0,0,0,0.85)");
+  capGrad.addColorStop(1, "rgba(0,0,0,0.84)");
   ctx.fillStyle = capGrad;
-  ctx.fillRect(artX, artY + artH - 80, artW, 80);
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(artX, artY, artW, artH, 6);
+  else ctx.rect(artX, artY, artW, artH);
+  ctx.clip();
+  ctx.fillRect(artX, artY + artH - 96, artW, 96);
+  ctx.restore();
 
-  pen.text("VAŠA FOTOGRAFIJA", artX + 18, artY + artH - 16, {
+  pen.text("ARHITEKTURNI PAVILJON", artX + 18, artY + artH - 16, {
     size: 10.5,
     weight: 700,
     color: "#fff",
     tracking: 0.15,
     mono: true,
   });
-  pen.text("01 — 12", artX + artW - 18, artY + artH - 16, {
+  pen.text("2026", artX + artW - 18, artY + artH - 16, {
     size: 10.5,
     weight: 700,
-    color: "rgba(255,255,255,0.75)",
+    color: BRAND,
     tracking: 0.15,
     mono: true,
     align: "right",
   });
-  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
   ctx.lineWidth = 1.5;
   pen.roundRect(artX, artY, artW, artH, 6);
   ctx.stroke();
@@ -764,7 +807,16 @@ export function paintHighCraftSite(pen: Pen) {
     ctx.fillStyle = "rgba(255,255,255,0.16)";
     ctx.fillRect(cxCard, cardY, cardW, 1.5);
 
-    paintCardThumb(ctx, cxCard, cardY + 16, 92, 66, k);
+    const cardImg = media?.cards?.[k];
+    const drewCardPhoto = cardImg && drawCoverImage(ctx, cardImg, cxCard, cardY + 16, 92, 66, 4);
+    if (!drewCardPhoto) {
+      paintCardThumb(ctx, cxCard, cardY + 16, 92, 66, k);
+    } else {
+      ctx.strokeStyle = "rgba(255,255,255,0.16)";
+      ctx.lineWidth = 1.25;
+      pen.roundRect(cxCard, cardY + 16, 92, 66, 4);
+      ctx.stroke();
+    }
     pen.text(cards[k].name, cxCard + 108, cardY + 42, { size: 15, weight: 700, color: "#fff", tracking: -0.02 });
     pen.text(cards[k].meta, cxCard + 108, cardY + 62, {
       size: 10,

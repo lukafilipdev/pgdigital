@@ -6,7 +6,7 @@ import { Logo } from "@/components/ui/Logo";
 import { NAV_LINKS, SECTION_IDS } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
 import { useMagnetic } from "@/hooks/useMagnetic";
-import { useMediaQuery, useReducedMotion } from "@/hooks/useMediaQuery";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useActiveSection, useHeaderTone, useScrolledPast } from "@/hooks/useScrollState";
 import { cn } from "@/lib/cn";
 import { clamp } from "@/lib/math";
@@ -26,7 +26,6 @@ export function Header() {
   const tone = useHeaderTone();
   const isLight = tone === "light";
   const isDesktop = useMediaQuery("(min-width: 900px)");
-  const reducedMotion = useReducedMotion();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -36,18 +35,15 @@ export function Header() {
     NAV_LINKS.findIndex((item) => item.id === activeId),
   );
   const highlightedIndex = hoverIndex ?? activeIndex;
-  const activeLink = NAV_LINKS[activeIndex] ?? NAV_LINKS[0];
 
   const navRef = useRef<HTMLElement>(null);
   const indRef = useRef<HTMLSpanElement>(null);
   const dimRef = useRef<HTMLDivElement>(null);
   const dimLabRef = useRef<HTMLSpanElement>(null);
   const progRef = useRef<HTMLDivElement>(null);
-  const labelRef = useRef<HTMLSpanElement>(null);
   const tickRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const ctaRef = useRef<HTMLAnchorElement>(null);
   const ctaInnerRef = useRef<HTMLSpanElement>(null);
-  const prevActiveRef = useRef(activeIndex);
 
   useMagnetic(ctaRef, {
     radius: 90,
@@ -55,23 +51,6 @@ export function Header() {
     easing: 0.15,
     innerRef: ctaInnerRef,
   });
-
-  // Directional vertical flip when active section label changes.
-  useEffect(() => {
-    const prev = prevActiveRef.current;
-    prevActiveRef.current = activeIndex;
-    if (prev === activeIndex || reducedMotion) return;
-    const el = labelRef.current;
-    if (!el || !el.animate) return;
-    const dir = activeIndex > prev ? 1 : -1;
-    el.animate(
-      [
-        { transform: `translateY(${55 * dir}%)`, opacity: 0 },
-        { transform: "none", opacity: 1 },
-      ],
-      { duration: 400, easing: "cubic-bezier(.2,.8,.2,1)" },
-    );
-  }, [activeIndex, reducedMotion]);
 
   // Sync sliding pill indicator & hover architectural caliper ("0 PX").
   const syncIndicator = useCallback(() => {
@@ -155,13 +134,13 @@ export function Header() {
             scrolled && !mobileMenuActive && isLight && "bg-paper/84",
           )}
         >
-          {/* Left: Cross-Fading Wordmark + Live Section Label */}
+          {/* Left: Cross-Fading Wordmark */}
           <a
             href="#domov"
             data-cursor="link"
             onClick={() => setMenuOpen(false)}
             aria-label="PG DIGITAL domov"
-            className="group flex min-w-0 shrink-0 items-center gap-3.5 transition-opacity duration-300 hover:opacity-90 sm:gap-4"
+            className="group flex min-w-0 shrink-0 items-center transition-opacity duration-300 hover:opacity-90"
           >
             <span
               className={cn(
@@ -187,27 +166,6 @@ export function Header() {
                   headerDarkForMenu ? "opacity-0" : "opacity-100",
                 )}
               />
-            </span>
-
-            <span
-              className={cn(
-                "hidden items-center gap-2 border-l pl-3.5 font-mono text-[10.5px] font-bold tracking-[.16em] whitespace-nowrap transition-[border-color,opacity] duration-450 sm:flex sm:pl-4",
-                mobileMenuActive && "opacity-0",
-                !headerDarkForMenu ? "border-ink/12" : "border-white/14",
-              )}
-            >
-              <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand" />
-              <span className="overflow-hidden">
-                <span
-                  ref={labelRef}
-                  className={cn(
-                    "inline-block transition-colors duration-450",
-                    !headerDarkForMenu ? "text-ink-muted" : "text-white/65",
-                  )}
-                >
-                  {activeLink.label}
-                </span>
-              </span>
             </span>
           </a>
 

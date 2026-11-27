@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRightIcon, ArrowUpRightIcon, CloseIcon, GlobeIcon } from "@/components/ui/Icons";
+import { ArrowRightIcon, ArrowUpRightIcon, CloseIcon } from "@/components/ui/Icons";
 import { PROJECTS } from "@/content/site";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -82,7 +82,7 @@ export function CaseStudyDialog({ index, origin, onNext, onClose }: CaseStudyDia
     >
       <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-white/[0.08] bg-black/85 px-[clamp(18px,3vw,40px)] backdrop-blur-md">
         <span className="eyebrow flex items-center gap-2.5 text-muted">
-          <GlobeIcon size={14} className="text-brand" />
+          <span aria-hidden className="size-1.5 rounded-full bg-brand" />
           <span className="text-white">{project.title}</span>
         </span>
         <button
@@ -103,7 +103,6 @@ export function CaseStudyDialog({ index, origin, onNext, onClose }: CaseStudyDia
 
       <div className="flex flex-col gap-[clamp(36px,6vh,64px)] px-[clamp(18px,3vw,40px)] pt-[clamp(40px,8vh,90px)] pb-[120px]">
         <div className="eyebrow flex flex-wrap items-center gap-3 text-muted">
-          <GlobeIcon size={13} className="text-brand" />
           <span className="text-brand">{project.category}</span>
           <span>{project.year}</span>
         </div>

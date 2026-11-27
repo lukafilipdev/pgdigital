@@ -3,13 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, type RefObject } from "react";
 import { useIntro } from "@/components/intro/IntroProvider";
-import {
-  ArrowDownIcon,
-  ArrowRightIcon,
-  ArrowUpRightIcon,
-  EyeIcon,
-  SparkIcon,
-} from "@/components/ui/Icons";
+import { ArrowDownIcon, ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/Icons";
 import { Kicker } from "@/components/ui/Kicker";
 import { HERO_LAYERS, PROJECTS, projectScreenshot } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
@@ -470,7 +464,7 @@ export function Hero() {
               className="flex flex-wrap items-center justify-between gap-2 pb-[1.5vh] font-mono text-[clamp(10px,1.2vw,12px)] tracking-[.18em] uppercase text-white/60 opacity-0"
             >
               <div className="inline-flex items-center gap-2.5">
-                <SparkIcon size={13} className="shrink-0 text-brand" />
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand" />
                 <span>PG INŽENIRING · DIGITALNI STUDIO</span>
               </div>
               <span ref={coordRef} aria-hidden className="hidden tabular-nums text-white/40 nav:inline">
@@ -788,8 +782,8 @@ export function Hero() {
                 <span>POMAKNI</span>
               </div>
 
-              <div aria-hidden className="flex items-center gap-2">
-                <EyeIcon size={14} className="shrink-0 text-brand" />
+              <div aria-hidden className="flex items-center gap-2.5">
+                <span className="size-2 shrink-0 rounded-full border border-brand" />
                 <span>
                   <span className="text-white">POD POVRŠJEM</span>{" "}
                   <span className="text-white/55 nav:hidden">· tapnite in pridržite</span>

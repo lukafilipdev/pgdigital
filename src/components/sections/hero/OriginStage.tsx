@@ -192,9 +192,7 @@ export function OriginStage() {
       >
         {/* Top Architectural Bar: Section Label + Live PROSTOR / ZASLON Split Readout */}
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.2vw,12px)] tracking-[.18em] uppercase text-white/60">
-          <SectionLabel icon={<BespokeLayersIcon size={14} />}>
-            IZVOR · PG INŽENIRING
-          </SectionLabel>
+          <SectionLabel>IZVOR · PG INŽENIRING</SectionLabel>
           <div aria-hidden className="inline-flex items-center gap-2 tabular-nums">
             <span>
               PROSTOR <span ref={pLeftRef} className="text-white">50</span> %
@@ -470,9 +468,7 @@ export function OriginStage() {
               className="relative flex flex-col gap-3 border-t border-white/12 pt-6"
             >
               <span aria-hidden className="absolute -top-px left-0 h-[2px] w-12 bg-brand" />
-              <span className="inline-flex size-9 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
-                <Icon size={17} />
-              </span>
+              <Icon size={20} className="text-brand" />
               <h3 className="m-0 font-display text-[clamp(22px,1.7vw,28px)] leading-[1.1] font-extrabold tracking-[-.035em] text-white">
                 {title}
               </h3>

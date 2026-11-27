@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRightIcon, ArrowUpRightIcon, GlobeIcon, SparkIcon } from "@/components/ui/Icons";
+import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/Icons";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { PROJECTS, projectScreenshot, type Project } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
@@ -72,7 +72,7 @@ export function Projects() {
         {/* Section Header */}
         <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-6">
           <div className="flex flex-col gap-4">
-            <SectionLabel icon={<GlobeIcon size={14} />}>PROJEKTI</SectionLabel>
+            <SectionLabel>PROJEKTI</SectionLabel>
             <h2
               id="projekti-h"
               className="m-0 overflow-hidden pb-[.06em] font-display text-[clamp(48px,6.4vw,120px)] leading-[.9] font-extrabold tracking-[-.055em] text-white"
@@ -126,7 +126,7 @@ export function Projects() {
         >
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.3vw,12px)] tracking-[.18em] uppercase text-white/60">
             <span className="inline-flex items-center gap-2.5">
-              <SparkIcon size={13} className="text-brand" />
+              <span aria-hidden className="size-1.5 rounded-full bg-brand" />
               <span className="font-bold text-brand">NASLEDNJI</span>
               <span>VAŠA ZNAMKA</span>
             </span>
@@ -310,7 +310,7 @@ function ProjectSpread({
       {/* Project Meta Strip */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.3vw,12px)] tracking-[.18em] uppercase text-white/60">
         <div className="inline-flex items-center gap-2.5">
-          <GlobeIcon size={13} className="text-brand" />
+          <span aria-hidden className="size-1.5 rounded-full bg-brand" />
           <span>{project.category}</span>
         </div>
         <a

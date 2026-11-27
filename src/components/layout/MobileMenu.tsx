@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent } from "react";
-import {
-  ArrowRightIcon,
-  BespokeLayersIcon,
-  CalendarIcon,
-  ClockIcon,
-  DesignSystemIcon,
-  GlobeIcon,
-  HomeIcon,
-  MailIcon,
-} from "@/components/ui/Icons";
+import { ArrowRightIcon } from "@/components/ui/Icons";
 import { CONTACT_EMAIL } from "@/content/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { cn } from "@/lib/cn";
@@ -22,12 +13,12 @@ type MobileMenuProps = {
 };
 
 const MENU_ITEMS = [
-  { id: "domov", label: "Domov", Icon: HomeIcon },
-  { id: "o-nas", label: "O nas", Icon: BespokeLayersIcon },
-  { id: "storitve", label: "Storitve", Icon: DesignSystemIcon },
-  { id: "projekti", label: "Projekti", Icon: GlobeIcon },
-  { id: "proces", label: "Proces", Icon: CalendarIcon },
-  { id: "kontakt", label: "Kontakt", Icon: MailIcon },
+  { id: "domov", label: "Domov" },
+  { id: "o-nas", label: "O nas" },
+  { id: "storitve", label: "Storitve" },
+  { id: "projekti", label: "Projekti" },
+  { id: "proces", label: "Proces" },
+  { id: "kontakt", label: "Kontakt" },
 ] as const;
 
 export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
@@ -50,7 +41,7 @@ export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
       aria-hidden={!open}
       aria-label="Meni"
       className={cn(
-        "fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black/95 px-[clamp(20px,5.5vw,32px)] pt-[88px] pb-[max(26px,env(safe-area-inset-bottom))] text-white backdrop-blur-2xl",
+        "fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black/96 px-[clamp(20px,5.5vw,32px)] pt-[88px] pb-[max(26px,env(safe-area-inset-bottom))] text-white backdrop-blur-2xl",
         "transition-[clip-path,opacity] duration-550 ease-smooth",
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
       )}
@@ -60,13 +51,12 @@ export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
           : "circle(0% at calc(100% - 40px) 40px)",
       }}
     >
-      {/* Subtle top divider beneath the persistent morphing header */}
       <div className="h-px w-full shrink-0 bg-white/10" />
 
-      {/* Staggered Modern Navigation List with Crisp Icons */}
+      {/* Clean Editorial Staggered Navigation List */}
       <nav aria-label="Meni" className="my-auto py-5">
-        <div className="flex flex-col gap-1.5">
-          {MENU_ITEMS.map(({ id, label, Icon }, index) => {
+        <div className="flex flex-col divide-y divide-white/[0.08]">
+          {MENU_ITEMS.map(({ id, label }, index) => {
             const isActive = id === activeId;
             return (
               <a
@@ -76,28 +66,18 @@ export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
                 onClick={onClose}
                 aria-current={isActive ? "location" : undefined}
                 style={{
-                  transitionDelay: open ? `${90 + index * 45}ms` : "0ms",
+                  transitionDelay: open ? `${80 + index * 45}ms` : "0ms",
                 }}
                 className={cn(
-                  "group flex items-center justify-between gap-4 rounded-2xl px-3.5 py-3 transition-[opacity,transform,background-color,color] duration-500 ease-smooth",
+                  "group flex items-center justify-between gap-4 py-3.5 transition-[opacity,transform,color] duration-500 ease-smooth",
                   open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
-                  isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.04]",
                 )}
               >
-                <span className="flex items-center gap-4">
+                <span className="flex items-center gap-3">
+                  {isActive && <span aria-hidden className="size-2 shrink-0 rounded-full bg-brand" />}
                   <span
                     className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors duration-300",
-                      isActive
-                        ? "border-brand/50 bg-brand/15 text-brand"
-                        : "border-white/12 bg-white/[0.03] text-white/65 group-hover:border-brand/40 group-hover:text-brand",
-                    )}
-                  >
-                    <Icon size={18} />
-                  </span>
-                  <span
-                    className={cn(
-                      "font-display text-[clamp(28px,8.5vw,44px)] leading-none font-extrabold tracking-[-.04em] transition-colors duration-300",
+                      "font-display text-[clamp(32px,9.5vw,52px)] leading-none font-extrabold tracking-[-.045em] transition-colors duration-300",
                       isActive ? "text-brand" : "text-white group-hover:text-brand",
                     )}
                   >
@@ -109,7 +89,7 @@ export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
                   size={18}
                   className={cn(
                     "shrink-0 transition-transform duration-300 group-hover:translate-x-1",
-                    isActive ? "text-brand" : "text-white/30 group-hover:text-brand",
+                    isActive ? "text-brand" : "text-white/25 group-hover:text-brand",
                   )}
                 />
               </a>
@@ -130,15 +110,11 @@ export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
           <a
             href={`mailto:${CONTACT_EMAIL}`}
             tabIndex={open ? 0 : -1}
-            className="inline-flex items-center gap-2 text-white/80 transition-colors hover:text-brand"
+            className="text-white/80 transition-colors hover:text-brand"
           >
-            <MailIcon size={13} className="text-brand" />
-            <span>{CONTACT_EMAIL}</span>
+            {CONTACT_EMAIL}
           </a>
-          <span className="inline-flex items-center gap-1.5 text-white/65">
-            <ClockIcon size={13} className="text-brand" />
-            <span>ODZIV V 24 URAH</span>
-          </span>
+          <span className="text-white/65">ODZIV V 24 URAH</span>
         </div>
 
         <a

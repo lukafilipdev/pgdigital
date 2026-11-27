@@ -1,16 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  CodeEngineIcon,
-  DesignSystemIcon,
-  RocketIcon,
-  StrategyIcon,
-} from "@/components/ui/Icons";
+import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/Icons";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { useFrame } from "@/hooks/useFrame";
 import { useInViewOnce, useInViewport } from "@/hooks/useInView";
@@ -21,7 +12,6 @@ import { approach, clamp } from "@/lib/math";
 const STEPS = [
   {
     id: "strategija",
-    Icon: StrategyIcon,
     title: "Ideja in strategija",
     mobileLines: ["Ideja in", "strategija"],
     short: "STRATEGIJA",
@@ -33,7 +23,6 @@ const STEPS = [
   },
   {
     id: "oblikovanje",
-    Icon: DesignSystemIcon,
     title: "Oblikovanje sistema",
     mobileLines: ["Oblikovanje", "sistema"],
     short: "OBLIKOVANJE",
@@ -45,7 +34,6 @@ const STEPS = [
   },
   {
     id: "razvoj",
-    Icon: CodeEngineIcon,
     title: "Inženiring in razvoj",
     mobileLines: ["Inženiring", "in razvoj"],
     short: "RAZVOJ",
@@ -57,7 +45,6 @@ const STEPS = [
   },
   {
     id: "objava",
-    Icon: RocketIcon,
     title: "Objava in podpora",
     mobileLines: ["Objava in", "podpora"],
     short: "OBJAVA",
@@ -88,9 +75,10 @@ function activeStepFor(p: number): number {
 }
 
 /**
- * 05 · PROCES ("Od prvega pogovora do objave.")
+ * PROCES ("Od prvega pogovora do objave.")
  * Interactive draggable 6-week Gantt scrubber on Warm Stone (#F4F1EC) synced
- * at 60 FPS to a colossal auto-fitted hollow-to-solid filling step title.
+ * via GPU-composited direct-ref transforms (zero subtree style invalidation)
+ * to a colossal auto-fitted hollow-to-solid filling step title.
  */
 export function Process() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -98,7 +86,15 @@ export function Process() {
   const trackRef = useRef<HTMLDivElement>(null);
   const stepWrapRef = useRef<HTMLDivElement>(null);
   const stepAnimRef = useRef<HTMLDivElement>(null);
+  const phRef = useRef<HTMLDivElement>(null);
   const phLabRef = useRef<HTMLSpanElement>(null);
+  const cursorRef = useRef<HTMLSpanElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const edgeRef = useRef<HTMLDivElement>(null);
+  const edgeLabRef = useRef<HTMLSpanElement>(null);
+  const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const barInnerRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const barLiveRefs = useRef<(boolean | null)[]>([null, null, null, null]);
 
   const revealed = useInViewOnce(sectionRef);
   const inViewport = useInViewport(sectionRef);
@@ -109,9 +105,12 @@ export function Process() {
   const [active, setActive] = useState(0);
   const activeRef = useRef(0);
   const lastFitKeyRef = useRef("");
+  const trackWidthRef = useRef(0);
+  const stepWidthRef = useRef(0);
 
   const play = useRef({
     p: 0,
+    targetP: 0,
     touched: false,
     dragging: false,
     downX: 0,
@@ -123,12 +122,16 @@ export function Process() {
     cx: 0,
     cy: 0,
     cs: 0,
+    lastWeek: "",
+    lastPct: "",
+    lastEdgeRight: false,
   });
 
-  const setProgress = useCallback((value: number) => {
+  const setTargetProgress = useCallback((value: number, immediate = false) => {
     const nextP = clamp(value, 0, TOTAL_WEEKS);
-    play.current.p = nextP;
-    const nextActive = activeStepFor(nextP);
+    play.current.targetP = nextP;
+    if (immediate) play.current.p = nextP;
+    const nextActive = activeStepFor(play.current.p);
     if (nextActive !== activeRef.current) {
       activeRef.current = nextActive;
       setActive(nextActive);
@@ -140,6 +143,9 @@ export function Process() {
     if (!box) return;
     const W = box.clientWidth;
     if (!W) return;
+    stepWidthRef.current = W;
+    if (trackRef.current) trackWidthRef.current = trackRef.current.clientWidth;
+
     const els = Array.from(box.querySelectorAll<HTMLElement>("[data-fit]"));
     if (!els.length) return;
     const key = `${W}|${activeRef.current}|${els.length}`;
@@ -156,10 +162,15 @@ export function Process() {
 
   useEffect(() => {
     const box = stepWrapRef.current;
+    const tr = trackRef.current;
     if (!box) return;
     fitStepTitle(true);
-    const observer = new ResizeObserver(() => fitStepTitle(true));
+    const observer = new ResizeObserver(() => {
+      if (tr) trackWidthRef.current = tr.clientWidth;
+      fitStepTitle(true);
+    });
     observer.observe(box);
+    if (tr) observer.observe(tr);
 
     let disposed = false;
     document.fonts.ready.then(() => {
@@ -177,10 +188,10 @@ export function Process() {
     if (animEl && !reducedMotion && animEl.animate) {
       animEl.animate(
         [
-          { transform: "translateY(22px)", opacity: 0, filter: "blur(10px)" },
-          { transform: "none", opacity: 1, filter: "blur(0)" },
+          { transform: "translate3d(0, 16px, 0)", opacity: 0 },
+          { transform: "translate3d(0, 0, 0)", opacity: 1 },
         ],
-        { duration: 600, easing: "cubic-bezier(.2,.8,.2,1)" },
+        { duration: 480, easing: "cubic-bezier(.2,.8,.2,1)" },
       );
     }
     return () => cancelAnimationFrame(frame);
@@ -192,7 +203,7 @@ export function Process() {
       if (!tr) return;
       const r = tr.getBoundingClientRect();
       if (!r.width) return;
-      setProgress(((e.clientX - r.left) / r.width) * TOTAL_WEEKS);
+      setTargetProgress(((e.clientX - r.left) / r.width) * TOTAL_WEEKS);
     };
 
     const onDown = (e: PointerEvent) => {
@@ -243,72 +254,93 @@ export function Process() {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  }, [hoverCapable, setProgress]);
+  }, [hoverCapable, setTargetProgress]);
 
   useFrame((now) => {
-    const section = sectionRef.current;
-    const tr = trackRef.current;
-    const st = stepWrapRef.current;
-    if (!section || !tr) return;
-
     const s = play.current;
     s.startedAt ??= now;
 
     if (!s.touched && !reducedMotion) {
       const elapsed = (now - s.startedAt) % (PLAY_MS + HOLD_MS);
-      setProgress(Math.min(1, elapsed / PLAY_MS) * TOTAL_WEEKS);
+      s.targetP = Math.min(1, elapsed / PLAY_MS) * TOTAL_WEEKS;
+      s.p = s.targetP;
+    } else {
+      s.p = reducedMotion ? s.targetP : approach(s.p, s.targetP, s.dragging ? 0.34 : 0.16);
     }
 
     const p = s.p;
-    const px = (p / TOTAL_WEEKS) * tr.clientWidth;
-    section.style.setProperty("--px", `${px.toFixed(1)}px`);
+    const nextActive = activeStepFor(p);
+    if (nextActive !== activeRef.current) {
+      activeRef.current = nextActive;
+      setActive(nextActive);
+    }
+
+    const trackW = trackWidthRef.current || trackRef.current?.clientWidth || 0;
+    const px = (p / TOTAL_WEEKS) * trackW;
+    if (phRef.current) {
+      phRef.current.style.transform = `translate3d(${px.toFixed(2)}px, 0, 0)`;
+    }
 
     if (phLabRef.current) {
       const weekLabel = `TEDEN ${Math.min(TOTAL_WEEKS, Math.floor(p) + 1)}`;
-      if (phLabRef.current.textContent !== weekLabel) {
+      if (s.lastWeek !== weekLabel) {
+        s.lastWeek = weekLabel;
         phLabRef.current.textContent = weekLabel;
       }
-      phLabRef.current.style.transform = `translateX(${(-(p / TOTAL_WEEKS) * 100).toFixed(1)}%)`;
+      phLabRef.current.style.transform = `translate3d(${(-(p / TOTAL_WEEKS) * 100).toFixed(2)}%, 0, 0)`;
     }
 
-    // Fill each Gantt bar dynamically via clip-path.
-    tr.querySelectorAll<HTMLElement>("[data-bar]").forEach((bar) => {
-      const step = STEPS[Number(bar.dataset.bar)];
+    // Fill each Gantt bar dynamically via cached refs (zero querySelector per frame).
+    for (let i = 0; i < STEPS.length; i++) {
+      const bar = barRefs.current[i];
+      if (!bar) continue;
+      const step = STEPS[i];
       const f = clamp((p - step.start) / (step.end - step.start));
-      bar.style.clipPath = `inset(0 ${(100 - f * 100).toFixed(2)}% 0 0)`;
+      bar.style.clipPath = `inset(0 ${(100 - f * 100).toFixed(3)}% 0 0)`;
       const live = f > 0 && f < 1;
-      bar.style.backgroundColor = live ? "#f5751e" : "#0a0a0a";
-      const inner = bar.firstElementChild as HTMLElement | null;
-      if (inner) inner.style.color = live ? "#0a0a0a" : "#f4f1ec";
-    });
-
-    // Sync the colossal active step title fill & edge percentage badge.
-    if (st) {
-      const curStep = STEPS[activeRef.current];
-      const f = reducedMotion ? 1 : clamp((p - curStep.start) / (curStep.end - curStep.start));
-      const fill = st.querySelector<HTMLElement>("[data-fill]");
-      const edge = st.querySelector<HTMLElement>("[data-edge]");
-      const edgeLab = st.querySelector<HTMLElement>("[data-edgelab]");
-      if (fill) fill.style.clipPath = `inset(0 ${(100 - f * 100).toFixed(2)}% 0 0)`;
-      if (edge) {
-        edge.style.left = `${(f * 100).toFixed(2)}%`;
-        edge.style.opacity = f > 0.004 && f < 0.996 ? "1" : "0";
-      }
-      if (edgeLab) {
-        const pctText = `${Math.round(f * 100)} %`;
-        if (edgeLab.textContent !== pctText) edgeLab.textContent = pctText;
-        edgeLab.style.left = f > 0.85 ? "auto" : "8px";
-        edgeLab.style.right = f > 0.85 ? "8px" : "auto";
+      if (barLiveRefs.current[i] !== live) {
+        barLiveRefs.current[i] = live;
+        bar.style.backgroundColor = live ? "#f5751e" : "#0a0a0a";
+        const inner = barInnerRefs.current[i];
+        if (inner) inner.style.color = live ? "#0a0a0a" : "#f4f1ec";
       }
     }
 
-    // Smooth magnetic "◂ POVLECI ▸" scrubber cursor badge on desktop.
+    // Sync the colossal active step title fill & GPU-composited edge indicator.
+    const curStep = STEPS[activeRef.current];
+    const f = reducedMotion ? 1 : clamp((p - curStep.start) / (curStep.end - curStep.start));
+    if (fillRef.current) {
+      fillRef.current.style.clipPath = `inset(0 ${(100 - f * 100).toFixed(3)}% 0 0)`;
+    }
+
+    const stepW = stepWidthRef.current || stepWrapRef.current?.clientWidth || 0;
+    if (edgeRef.current) {
+      const edgePx = f * stepW;
+      edgeRef.current.style.transform = `translate3d(${edgePx.toFixed(2)}px, 0, 0)`;
+      edgeRef.current.style.opacity = f > 0.004 && f < 0.996 ? "1" : "0";
+    }
+    if (edgeLabRef.current) {
+      const pctText = `${Math.round(f * 100)} %`;
+      if (s.lastPct !== pctText) {
+        s.lastPct = pctText;
+        edgeLabRef.current.textContent = pctText;
+      }
+      const flipLeft = f > 0.85;
+      if (s.lastEdgeRight !== flipLeft) {
+        s.lastEdgeRight = flipLeft;
+        edgeLabRef.current.style.transform = flipLeft
+          ? "translate3d(calc(-100% - 16px), 0, 0)"
+          : "translate3d(0, 0, 0)";
+      }
+    }
+
+    // Smooth magnetic "POVLECI" scrubber cursor badge directly on leaf node.
     s.cx = approach(s.cx, s.mx, 0.25);
     s.cy = approach(s.cy, s.my, 0.25);
     s.cs = approach(s.cs, s.hovered ? 1 : 0, 0.18);
-    section.style.setProperty("--cx", `${s.cx.toFixed(1)}px`);
-    section.style.setProperty("--cy", `${s.cy.toFixed(1)}px`);
-    section.style.setProperty("--cs", s.cs.toFixed(3));
+    if (cursorRef.current) {
+      cursorRef.current.style.transform = `translate3d(${s.cx.toFixed(1)}px, ${s.cy.toFixed(1)}px, 0) scale(${s.cs.toFixed(3)})`;
+    }
   }, inViewport);
 
   const cur = STEPS[active];
@@ -326,9 +358,7 @@ export function Process() {
         {/* Section Header */}
         <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-6">
           <div className="flex flex-col gap-4">
-            <SectionLabel icon={<CalendarIcon size={14} />} tone="light">
-              PROCES
-            </SectionLabel>
+            <SectionLabel tone="light">PROCES</SectionLabel>
             <h2
               id="proces-h"
               className="m-0 overflow-hidden pb-[.06em] font-display text-[clamp(44px,6.2vw,120px)] leading-[.9] font-extrabold tracking-[-.055em] text-ink"
@@ -395,55 +425,57 @@ export function Process() {
               ))}
             </div>
 
-            {STEPS.map((step, i) => {
-              const narrow = step.end - step.start <= 1;
-              return (
-                <div key={step.id} className="relative h-[clamp(30px,2.4vw,38px)]">
-                  <button
-                    type="button"
-                    aria-label={`${step.title} (${step.weeks})`}
-                    onClick={() => {
-                      if (play.current.dragMoved) return;
-                      play.current.touched = true;
-                      setProgress(step.start + 0.04);
+            {STEPS.map((step, i) => (
+              <div key={step.id} className="relative h-[clamp(30px,2.4vw,38px)]">
+                <button
+                  type="button"
+                  aria-label={`${step.title} (${step.weeks})`}
+                  onClick={() => {
+                    if (play.current.dragMoved) return;
+                    play.current.touched = true;
+                    setTargetProgress(step.start + 0.04);
+                  }}
+                  style={{
+                    left: `${(step.start / TOTAL_WEEKS) * 100}%`,
+                    width: `${((step.end - step.start) / TOTAL_WEEKS) * 100}%`,
+                  }}
+                  className="absolute inset-y-0 cursor-pointer rounded-[6px] bg-ink/[0.06] text-left shadow-[inset_0_0_0_1px_rgba(10,10,10,0.08)]"
+                >
+                  <span className="absolute inset-0 flex items-center overflow-hidden px-2.5 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-ink-soft">
+                    <span className="truncate">{step.short}</span>
+                  </span>
+                  <span
+                    ref={(el) => {
+                      barRefs.current[i] = el;
                     }}
-                    style={{
-                      left: `${(step.start / TOTAL_WEEKS) * 100}%`,
-                      width: `${((step.end - step.start) / TOTAL_WEEKS) * 100}%`,
-                    }}
-                    className="absolute inset-y-0 cursor-pointer rounded-[6px] bg-ink/[0.06] text-left shadow-[inset_0_0_0_1px_rgba(10,10,10,0.08)]"
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-[6px] bg-ink will-change-[clip-path]"
+                    style={{ clipPath: "inset(0 100% 0 0)" }}
                   >
-                    <span className="absolute inset-0 flex items-center gap-2 overflow-hidden px-2.5 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-ink-soft">
-                      <step.Icon size={12} className="shrink-0" />
-                      <span className={narrow ? "hidden sm:inline" : undefined}>{step.short}</span>
-                    </span>
                     <span
-                      data-bar={i}
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-[6px] bg-ink"
-                      style={{ clipPath: "inset(0 100% 0 0)" }}
+                      ref={(el) => {
+                        barInnerRefs.current[i] = el;
+                      }}
+                      className="absolute inset-0 flex items-center overflow-hidden px-2.5 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-paper"
                     >
-                      <span className="absolute inset-0 flex items-center gap-2 overflow-hidden px-2.5 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-paper">
-                        <step.Icon size={12} className="shrink-0" />
-                        <span className={narrow ? "hidden sm:inline" : undefined}>{step.short}</span>
-                      </span>
+                      <span className="truncate">{step.short}</span>
                     </span>
-                  </button>
-                </div>
-              );
-            })}
+                  </span>
+                </button>
+              </div>
+            ))}
 
             {/* Vertical Orange Playhead + Week Pill */}
             <div
+              ref={phRef}
               aria-hidden
-              className="pointer-events-none absolute -top-7 bottom-0 left-0 z-20 w-0"
-              style={{ transform: "translateX(var(--px, 0px))" }}
+              className="pointer-events-none absolute -top-7 bottom-0 left-0 z-20 w-0 will-change-transform"
             >
               <span className="absolute inset-y-0 -left-px w-[2px] bg-brand" />
               <span className="absolute -top-1 -left-[5px] size-2.5 rounded-full bg-brand shadow-[0_0_0_4px_#f4f1ec]" />
               <span
                 ref={phLabRef}
-                className="absolute top-full left-0 mt-1.5 rounded-full bg-brand px-2.5 py-1 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-ink"
+                className="absolute top-full left-0 mt-1.5 rounded-full bg-brand px-2.5 py-1 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-ink will-change-transform"
               >
                 TEDEN 1
               </span>
@@ -452,11 +484,10 @@ export function Process() {
 
           {/* Desktop Magnetic Scrubber Cursor Pill */}
           <span
+            ref={cursorRef}
             aria-hidden
             className="pointer-events-none absolute top-0 left-0 z-30 -mt-[42px] -ml-[42px] hidden size-[84px] items-center justify-center gap-0.5 rounded-full bg-ink/90 font-mono text-[9.5px] font-bold tracking-[.12em] whitespace-nowrap text-paper shadow-[0_14px_32px_rgba(0,0,0,0.22)] will-change-transform nav:flex"
-            style={{
-              transform: "translate3d(var(--cx, 50%), var(--cy, 50%), 0) scale(var(--cs, 0))",
-            }}
+            style={{ transform: "translate3d(0px, 0px, 0) scale(0)" }}
           >
             <ChevronLeftIcon size={11} className="text-brand" />
             <span>POVLECI</span>
@@ -468,7 +499,7 @@ export function Process() {
         <div className="mt-4 flex flex-col gap-[clamp(18px,2.2vw,28px)]">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.3vw,12px)] tracking-[.18em] text-ink-soft">
             <div className="inline-flex items-center gap-2.5">
-              <cur.Icon size={14} className="text-brand" />
+              <span aria-hidden className="size-1.5 rounded-full bg-brand" />
               <span className="font-bold text-brand">{cur.short}</span>
               <span className="text-ink-muted">·</span>
               <span>{cur.weeks}</span>
@@ -485,7 +516,7 @@ export function Process() {
                   data-cursor="link"
                   onClick={() => {
                     play.current.touched = true;
-                    setProgress(step.start + 0.04);
+                    setTargetProgress(step.start + 0.04);
                   }}
                   className={cn(
                     "h-1.5 w-7 cursor-pointer rounded-full transition-colors duration-300",
@@ -500,14 +531,17 @@ export function Process() {
             </div>
           </div>
 
-          {/* Full-Width Auto-Fitted Hollow-to-Solid Filling Step Title */}
+          {/* Full-Width Auto-Fitted Hollow-to-Solid Filling Step Title (isolated GPU layers) */}
           <div
             ref={stepWrapRef}
             className="relative w-full font-display leading-[.92] font-extrabold tracking-[-.055em]"
           >
-            <div ref={stepAnimRef} className="relative">
-              {/* Base Hollow Outline Layer — rasterized shadow outline works cleanly on Safari & Chrome */}
-              <h3 className="m-0 text-paper" style={{ textShadow: HOLLOW_TEXT_SHADOW }}>
+            <div ref={stepAnimRef} className="relative will-change-transform">
+              {/* Base Hollow Outline Layer — isolated static GPU layer (never repainted during wipe) */}
+              <h3
+                className="m-0 text-paper [transform:translateZ(0)]"
+                style={{ textShadow: HOLLOW_TEXT_SHADOW }}
+              >
                 {lines.map((txt, idx) => (
                   <span key={`${cur.id}-${idx}`} className="block">
                     <span
@@ -523,11 +557,11 @@ export function Process() {
                 ))}
               </h3>
 
-              {/* Clipped Solid Ink Fill Layer */}
+              {/* Clipped Solid Ink Fill Layer — own compositor layer for silky 120 FPS clip wipe */}
               <div
-                data-fill=""
+                ref={fillRef}
                 aria-hidden
-                className="pointer-events-none absolute inset-0 text-ink"
+                className="pointer-events-none absolute inset-0 text-ink will-change-[clip-path] [transform:translateZ(0)]"
                 style={{ clipPath: "inset(0 100% 0 0)" }}
               >
                 {lines.map((txt, idx) => (
@@ -543,16 +577,16 @@ export function Process() {
                 ))}
               </div>
 
-              {/* Moving Orange Progress Edge & Live Percentage Badge */}
+              {/* Moving Orange Progress Edge & Live Percentage Badge (GPU translate3d) */}
               <div
-                data-edge=""
+                ref={edgeRef}
                 aria-hidden
-                className="pointer-events-none absolute -inset-y-2.5 left-0 w-0 opacity-0"
+                className="pointer-events-none absolute -inset-y-2.5 left-0 w-0 opacity-0 will-change-transform"
               >
                 <span className="absolute inset-y-0 -left-[0.5px] w-px bg-brand" />
                 <span
-                  data-edgelab=""
-                  className="absolute top-0 left-2 font-mono text-[11px] font-bold tracking-[.12em] whitespace-nowrap tabular-nums text-brand-dark"
+                  ref={edgeLabRef}
+                  className="absolute top-0 left-2 font-mono text-[11px] font-bold tracking-[.12em] whitespace-nowrap tabular-nums text-brand-dark will-change-transform"
                 >
                   0 %
                 </span>

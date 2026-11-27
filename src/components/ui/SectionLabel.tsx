@@ -2,14 +2,13 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 type SectionLabelProps = {
-  icon?: ReactNode;
   children: ReactNode;
   tone?: "dark" | "light";
   className?: string;
 };
 
-/** Clean icon + mono label that opens each section on dark or light surfaces (no AI numbering or dashes). */
-export function SectionLabel({ icon, children, tone = "dark", className }: SectionLabelProps) {
+/** Clean dot + mono eyebrow that opens each section on dark or light surfaces. */
+export function SectionLabel({ children, tone = "dark", className }: SectionLabelProps) {
   return (
     <div
       className={cn(
@@ -18,11 +17,7 @@ export function SectionLabel({ icon, children, tone = "dark", className }: Secti
         className,
       )}
     >
-      {icon ? (
-        <span className="inline-flex shrink-0 text-brand">{icon}</span>
-      ) : (
-        <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand" />
-      )}
+      <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand" />
       <span>{children}</span>
     </div>
   );
