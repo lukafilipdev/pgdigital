@@ -35,9 +35,9 @@ export function MobileMenu({ activeId, onClose }: MobileMenuProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Meni"
-      className="fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-[#08080c] bg-mesh-dark px-[18px] pb-6 text-paper"
+      className="fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black px-[clamp(18px,5vw,28px)] pb-6 text-white"
     >
-      {/* Top Bar matching Header height & official PG DIGITAL logo */}
+      {/* Top bar matching Header height */}
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-white/10">
         <Logo height={34} tone="dark" alt="PG DIGITAL" eager />
         <button
@@ -45,19 +45,16 @@ export function MobileMenu({ activeId, onClose }: MobileMenuProps) {
           type="button"
           onClick={onClose}
           aria-label="Zapri meni"
-          className="inline-flex h-11 items-center gap-2 rounded-full border border-white/22 bg-[#141418]/90 px-4 font-display text-[12px] font-extrabold tracking-[.08em] text-paper transition-colors hover:border-brand hover:text-brand"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-white/25 px-4 font-display text-[12px] font-extrabold tracking-[.08em] text-white transition-colors hover:border-brand hover:text-brand"
         >
           <span>ZAPRI</span>
           <CloseIcon size={15} />
         </button>
       </div>
 
-      {/* Main Architectural Navigation Card */}
-      <nav
-        aria-label="Meni"
-        className="my-auto py-5"
-      >
-        <div className="flex flex-col divide-y divide-white/[0.08] rounded-[18px] border border-white/12 bg-[#0e0e13]/95 px-5 py-1 shadow-[0_28px_64px_rgba(0,0,0,0.65)] backdrop-blur-[10px]">
+      {/* Full-bleed monumental editorial navigation list */}
+      <nav aria-label="Meni" className="my-auto py-6">
+        <div className="flex flex-col divide-y divide-white/[0.08]">
           {NAV_LINKS.map(({ id, label }, index) => {
             const isActive = id === activeId;
             return (
@@ -66,64 +63,51 @@ export function MobileMenu({ activeId, onClose }: MobileMenuProps) {
                 href={`#${id}`}
                 onClick={onClose}
                 aria-current={isActive ? "location" : undefined}
-                className="group flex items-center justify-between gap-4 py-3.5 transition-colors"
+                className="group flex items-baseline justify-between gap-4 py-2.5 transition-colors"
               >
                 <span className="flex items-baseline gap-3.5">
-                  <span
-                    className={cn(
-                      "eyebrow-sm tabular-nums transition-colors",
-                      isActive ? "text-brand" : "text-muted group-hover:text-brand",
-                    )}
-                  >
+                  <span className="eyebrow-sm tabular-nums text-brand">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <span
                     className={cn(
-                      "font-display text-[clamp(22px,6.8vw,30px)] leading-none font-extrabold tracking-[-.035em] transition-colors",
-                      isActive ? "text-paper" : "text-paper/80 group-hover:text-paper",
+                      "font-display text-[clamp(36px,11vw,58px)] leading-[1.04] font-extrabold tracking-[-.045em] transition-colors",
+                      isActive ? "text-brand" : "text-white group-hover:text-brand",
                     )}
                   >
                     {label}
                   </span>
-                  {isActive && <span aria-hidden className="size-1.5 rounded-full bg-brand" />}
                 </span>
 
-                <span
-                  aria-hidden
+                <ArrowRightIcon
+                  size={18}
                   className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors duration-250",
-                    isActive
-                      ? "border-brand bg-brand text-[#08080c]"
-                      : "border-white/15 bg-white/[0.03] text-paper/70 group-hover:border-brand group-hover:text-brand",
+                    "shrink-0 transition-transform duration-250 group-hover:translate-x-1",
+                    isActive ? "text-brand" : "text-white/30 group-hover:text-brand",
                   )}
-                >
-                  <ArrowRightIcon size={15} />
-                </span>
+                />
               </a>
             );
           })}
         </div>
       </nav>
 
-      {/* Bottom Studio Metadata & Primary CTA Card */}
-      <div className="flex shrink-0 flex-col gap-3.5 rounded-[18px] border border-white/12 bg-[#0e0e13]/95 p-4 backdrop-blur-[10px]">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1 font-mono text-[10px] tracking-[.12em] uppercase text-muted">
+      {/* Bottom studio contact & primary CTA */}
+      <div className="flex shrink-0 flex-col gap-4 border-t border-white/10 pt-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] tracking-[.12em] uppercase text-muted">
           <a
             href={`mailto:${CONTACT_EMAIL}`}
             className="text-soft transition-colors hover:text-brand"
           >
             {CONTACT_EMAIL}
           </a>
-          <span className="inline-flex items-center gap-1.5 text-paper/80">
-            <span className="size-1.5 rounded-full bg-brand" />
-            V 24 URAH
-          </span>
+          <span className="text-white/70">ODZIV V 24 URAH</span>
         </div>
 
         <a
           href="#kontakt"
           onClick={onClose}
-          className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-brand font-display text-[15px] font-extrabold text-[#08080c] transition-colors hover:bg-paper"
+          className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-brand font-display text-[15px] font-extrabold text-black transition-colors hover:bg-white"
         >
           <span>Začnimo projekt</span>
           <ArrowRightIcon size={16} />

@@ -1,13 +1,17 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   ArrowRightIcon,
   BespokeLayersIcon,
   PartnershipShieldIcon,
   PrecisionIcon,
 } from "@/components/ui/Icons";
-import { smoothstep } from "@/lib/math";
+import { useFrame } from "@/hooks/useFrame";
+import { useInViewOnce, useInViewport } from "@/hooks/useInView";
+import { useReducedMotion } from "@/hooks/useMediaQuery";
+import { cn } from "@/lib/cn";
+import { approach, clamp } from "@/lib/math";
 
 const PILLARS = [
   {
@@ -36,145 +40,338 @@ const COMPARE_ROWS = [
   { label: "REZULTAT", physical: "Objekt, ki stoji", digital: "Stran, ki deluje" },
 ] as const;
 
-export type OriginStageFrame = {
-  progress: number;
-  outro: number;
-  digitize: number;
-  mouseX: number;
-  reducedMotion: boolean;
-};
-
-export type OriginStageHandle = {
-  update: (frame: OriginStageFrame) => void;
-};
-
 /**
- * Closing "02 · O nas" ("IZVOR — PG INŽENIRING") showcase inside the pinned hero.
- * Leaves the live animated canvas mesh & vertex dots shining cleanly behind frosted
- * architectural cards and crisp unified SVG iconography.
+ * 02 · O NAS ("IZVOR · PG INŽENIRING")
+ * Interactive draggable PROSTOR ◂▸ ZASLON split-reveal over full-width
+ * auto-fitted typography, paired with a live-synced comparison table and
+ * three architectural pillars on pure black (#000000).
  */
-export const OriginStage = forwardRef<OriginStageHandle>(function OriginStage(_, ref) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const partRefs = useRef<(HTMLElement | null)[]>([]);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const pillarRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const ruleRefs = useRef<(HTMLSpanElement | null)[]>([]);
+export function OriginStage() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  const pLeftRef = useRef<HTMLSpanElement>(null);
+  const pRightRef = useRef<HTMLSpanElement>(null);
 
-  useImperativeHandle(ref, () => ({
-    update({ progress: P, outro, digitize, mouseX, reducedMotion }) {
-      const root = rootRef.current;
-      if (!root) return;
+  const visible = useInViewport(sectionRef);
+  const revealed = useInViewOnce(sectionRef);
+  const reducedMotion = useReducedMotion();
 
-      const visible = outro > 0.005;
-      if (!visible) {
-        if (root.style.visibility !== "hidden") {
-          root.style.visibility = "hidden";
-          root.style.opacity = "0";
-          root.style.pointerEvents = "none";
-        }
-        return;
-      }
-      if (root.style.visibility !== "visible") root.style.visibility = "visible";
-      root.style.opacity = "1";
-      root.style.pointerEvents = outro > 0.35 ? "auto" : "none";
+  const scrub = useRef({
+    p: 0.5,
+    targetP: 0.5,
+    dragging: false,
+    touched: false,
+    startedAt: null as number | null,
+    lastW: 0,
+  });
 
-      const statementSteps = [
-        [0.84, 0.885],
-        [0.85, 0.895],
-        [0.87, 0.92],
-        [0.89, 0.94],
-        [0.9, 0.945],
-      ] as const;
-      statementSteps.forEach((step, k) => {
-        const el = partRefs.current[k];
-        if (!el) return;
-        const e = reducedMotion ? 1 : smoothstep(step[0], step[1], P);
-        el.style.opacity = e.toFixed(3);
-        el.style.transform = `translate3d(0, ${((1 - e) * (k === 1 || k === 2 ? 26 : 12)).toFixed(2)}px, 0)`;
+  useEffect(() => {
+    const hd = headRef.current;
+    if (!hd) return;
+
+    const fitHeadlines = () => {
+      const W = hd.clientWidth;
+      if (!W) return;
+      const els = Array.from(hd.querySelectorAll<HTMLElement>("[data-fit]"));
+      els.forEach((el) => {
+        if (el.offsetParent === null) return;
+        el.style.fontSize = "100px";
+        const measured = el.offsetWidth || 1;
+        const ratio = parseFloat(el.dataset.fit || "1");
+        el.style.fontSize = `${((100 * W * ratio) / measured).toFixed(2)}px`;
       });
-
-      if (panelRef.current) {
-        const mAlpha = reducedMotion ? 1 : smoothstep(0.86, 0.93, P);
-        const shift = reducedMotion ? 0 : -mouseX * 10;
-        panelRef.current.style.opacity = mAlpha.toFixed(3);
-        panelRef.current.style.transform = `translate3d(${shift.toFixed(2)}px, ${((1 - mAlpha) * 20).toFixed(2)}px, 0)`;
-      }
-
-      PILLARS.forEach((_, idx) => {
-        const pillar = pillarRefs.current[idx];
-        const rule = ruleRefs.current[idx];
-        const start = 0.88 + idx * 0.016;
-        const e = reducedMotion ? 1 : smoothstep(start, start + 0.05, P);
-
-        if (pillar) {
-          pillar.style.opacity = e.toFixed(3);
-          pillar.style.transform = `translate3d(0, ${((1 - e) * 16).toFixed(2)}px, 0)`;
-        }
-        if (rule) {
-          const draw = reducedMotion ? 1 : smoothstep(idx * 0.18, idx * 0.18 + 0.45, digitize);
-          rule.style.transform = `scaleX(${draw.toFixed(4)})`;
-        }
+      hd.querySelectorAll<HTMLElement>("[data-w]").forEach((el) => {
+        el.textContent = String(Math.round(W));
       });
-    },
-  }));
+      scrub.current.lastW = W;
+    };
+
+    fitHeadlines();
+    const observer = new ResizeObserver(fitHeadlines);
+    observer.observe(hd);
+
+    let disposed = false;
+    document.fonts.ready.then(() => {
+      if (!disposed) fitHeadlines();
+    });
+
+    const updateTargetFromEvent = (e: PointerEvent) => {
+      const rect = hd.getBoundingClientRect();
+      if (!rect.width) return;
+      scrub.current.targetP = clamp((e.clientX - rect.left) / rect.width, 0.04, 0.96);
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (!hd.contains(e.target as Node)) return;
+      scrub.current.dragging = true;
+      scrub.current.touched = true;
+      updateTargetFromEvent(e);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!scrub.current.dragging) return;
+      updateTargetFromEvent(e);
+    };
+    const onPointerUp = () => {
+      scrub.current.dragging = false;
+    };
+
+    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointerup", onPointerUp, { passive: true });
+    window.addEventListener("pointercancel", onPointerUp, { passive: true });
+
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, []);
+
+  useFrame((now) => {
+    const section = sectionRef.current;
+    const hd = headRef.current;
+    if (!section || !hd) return;
+
+    const s = scrub.current;
+    s.startedAt ??= now;
+    const elapsed = now - s.startedAt;
+
+    if (!s.touched && !reducedMotion) {
+      s.targetP = 0.5 + 0.26 * Math.sin(elapsed / 2200);
+    }
+    const easing = reducedMotion ? 1 : s.dragging ? 0.32 : 0.08;
+    s.p = approach(s.p, s.targetP, easing);
+
+    const w = hd.clientWidth;
+    if (w > 0) {
+      section.style.setProperty("--x", `${(s.p * w).toFixed(1)}px`);
+      section.style.setProperty("--p", s.p.toFixed(4));
+    }
+
+    const leftPct = Math.round(s.p * 100);
+    const rightPct = 100 - leftPct;
+    if (pLeftRef.current && pLeftRef.current.textContent !== String(leftPct)) {
+      pLeftRef.current.textContent = String(leftPct);
+    }
+    if (pRightRef.current && pRightRef.current.textContent !== String(rightPct)) {
+      pRightRef.current.textContent = String(rightPct);
+    }
+  }, visible);
 
   return (
-    <div
-      ref={rootRef}
-      className="pointer-events-none absolute inset-0 flex flex-col justify-center overflow-hidden px-[clamp(18px,3.6vw,56px)] pt-[78px] pb-[clamp(22px,3.8vh,44px)] nav:pt-[92px]"
-      style={{ visibility: "hidden", opacity: 0 }}
+    <section
+      id="o-nas"
+      ref={sectionRef}
+      aria-labelledby="o-nas-h"
+      className="relative flex min-h-svh flex-col justify-center overflow-hidden bg-black px-[clamp(18px,3vw,64px)] py-[clamp(88px,12vh,148px)] text-white"
     >
-      <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col gap-[clamp(20px,3.6vh,40px)]">
-        {/* Top Two-Column Editorial Statement + "Prostor -> Zaslon" Blueprint Comparison Card */}
-        <div className="grid grid-cols-1 items-stretch gap-5 nav:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] nav:gap-8">
-          <div className="flex flex-col items-start justify-center rounded-[16px] border border-white/12 bg-[#0b0b0e]/95 px-5 py-4 text-left shadow-[0_28px_68px_rgba(0,0,0,0.65)] backdrop-blur-[10px] nav:px-8 nav:py-7">
-            <div
-              ref={(el) => {
-                partRefs.current[0] = el;
-              }}
-              className="eyebrow mb-[clamp(12px,2vh,22px)] inline-flex items-center gap-3.5 text-soft"
-            >
-              <span className="text-brand">02</span>
-              <span aria-hidden className="h-px w-6 bg-white/25" />
-              <span>IZVOR · PG INŽENIRING</span>
+      <div className="relative z-10 mx-auto flex w-full max-w-[1480px] flex-col gap-[clamp(44px,6.5vh,76px)]">
+        {/* Top Architectural Bar: Section Index + Live PROSTOR ◂▸ ZASLON Split Readout */}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.2vw,12px)] tracking-[.18em] uppercase text-white/60">
+          <div className="inline-flex items-center gap-3.5">
+            <span className="font-bold text-brand">02</span>
+            <span aria-hidden className="h-px w-7 bg-white/30" />
+            <span>IZVOR · PG INŽENIRING</span>
+          </div>
+          <div aria-hidden className="inline-flex items-center gap-3 tabular-nums">
+            <span>
+              PROSTOR <span ref={pLeftRef} className="text-white">50</span> %
+            </span>
+            <span className="text-brand">◂▸</span>
+            <span>
+              ZASLON <span ref={pRightRef} className="text-white">50</span> %
+            </span>
+          </div>
+        </div>
+
+        {/* Centerpiece: Interactive Draggable PROSTOR (Blueprint) ◂▸ ZASLON (Digital) Split Headline */}
+        <div
+          ref={headRef}
+          data-cursor="explore"
+          data-cursor-label="POVLECI"
+          className="relative my-4 w-full cursor-ew-resize touch-pan-y select-none font-display font-extrabold leading-[.9] tracking-[-.055em] nav:my-6"
+        >
+          {/* Left-side (PROSTOR) localized blueprint stage backdrop */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-x-[clamp(18px,3vw,64px)] -inset-y-12 bg-[#070707] bg-[linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(rgba(255,255,255,.028)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.028)_1px,transparent_1px)] bg-[length:80px_80px,80px_80px,16px_16px,16px_16px] nav:-inset-y-14"
+          />
+
+          {/* Base Layer: PROSTOR — Hollow Architectural Wireframe Blueprint */}
+          <div
+            aria-hidden
+            className="relative text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.55)]"
+          >
+            {/* Top MM dimension callout */}
+            <div className="absolute inset-x-0 -top-8 flex items-center gap-3 font-mono text-[10.5px] font-medium tracking-[.12em] text-white/60 [-webkit-text-stroke:0]">
+              <span className="h-3 w-px bg-white/60" />
+              <span className="flex-1 border-t border-dashed border-white/35" />
+              <span className="tabular-nums">
+                <span data-w="">—</span> MM
+              </span>
+              <span className="flex-1 border-t border-dashed border-white/35" />
+              <span className="h-3 w-px bg-white/60" />
             </div>
 
-            <h2 className="text-[clamp(38px,10.2vw,58px)] leading-[0.93] font-extrabold tracking-[-0.048em] text-white nav:text-[clamp(48px,4.9vw,84px)] nav:leading-[0.92]">
-              <span
-                ref={(el) => {
-                  partRefs.current[1] = el;
-                }}
-                className="block"
-              >
-                Gradimo v prostoru.
-              </span>
-              <span
-                ref={(el) => {
-                  partRefs.current[2] = el;
-                }}
-                className="block"
-              >
-                Zdaj tudi <span className="text-brand">digitalno.</span>
-              </span>
-            </h2>
+            {/* Desktop 2-line wireframe */}
+            <div className="hidden nav:block">
+              <div>
+                <span data-fit="1" className="inline-block whitespace-nowrap text-[10vw]">
+                  Gradimo v prostoru.
+                </span>
+              </div>
+              <div>
+                <span data-fit="1" className="inline-block whitespace-nowrap text-[10vw]">
+                  Zdaj tudi digitalno.
+                </span>
+              </div>
+            </div>
 
-            <p
-              ref={(el) => {
-                partRefs.current[3] = el;
-              }}
-              className="mt-[clamp(12px,1.8vh,20px)] max-w-[460px] text-[14.5px] leading-[1.5] text-soft nav:text-[clamp(16.5px,1.3vw,20px)]"
-            >
+            {/* Mobile 4-line wireframe */}
+            <div className="nav:hidden">
+              <div>
+                <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                  Gradimo v
+                </span>
+              </div>
+              <div>
+                <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                  prostoru.
+                </span>
+              </div>
+              <div>
+                <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                  Zdaj tudi
+                </span>
+              </div>
+              <div>
+                <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                  digitalno.
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom physical blueprint spec */}
+            <div className="absolute -bottom-7 left-0 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] font-medium tracking-[.12em] text-white/55 [-webkit-text-stroke:0] nav:text-[11px]">
+              <span>GRADBENI NAČRT · A-01</span>
+              <span className="hidden sm:inline">TOLERANCA ±1 MM</span>
+            </div>
+          </div>
+
+          {/* Clipped Right Layer: ZASLON — Solid Digital Web Grid */}
+          <div
+            className="pointer-events-none absolute -inset-x-[clamp(18px,3vw,64px)] -inset-y-12 bg-black px-[clamp(18px,3vw,64px)] py-12 nav:-inset-y-14 nav:py-14"
+            style={{
+              clipPath: "inset(0 0 0 calc(var(--x, 50%) + clamp(18px, 3vw, 64px)))",
+              backgroundImage: "linear-gradient(90deg, rgba(245, 117, 30, 0.08) 1px, transparent 1px)",
+              backgroundSize: "calc((100% - 2 * clamp(18px, 3vw, 64px)) / 12) 100%",
+              backgroundPosition: "clamp(18px, 3vw, 64px) 0",
+            }}
+          >
+            <div className="relative">
+              {/* Top PX dimension callout */}
+              <div
+                aria-hidden
+                className="absolute inset-x-0 -top-8 flex items-center gap-3 font-mono text-[10.5px] font-medium tracking-[.12em] text-brand"
+              >
+                <span className="h-3 w-px bg-brand" />
+                <span className="h-px flex-1 bg-brand/55" />
+                <span className="tabular-nums">
+                  <span data-w="">—</span> PX
+                </span>
+                <span className="h-px flex-1 bg-brand/55" />
+                <span className="h-3 w-px bg-brand" />
+              </div>
+
+              <h2 id="o-nas-h" className="m-0 font-display font-extrabold leading-[.9] tracking-[-.055em] text-white">
+                {/* Desktop 2-line solid */}
+                <span className="hidden nav:block">
+                  <span className="block">
+                    <span data-fit="1" className="inline-block whitespace-nowrap text-[10vw]">
+                      Gradimo v prostoru.
+                    </span>
+                  </span>
+                  <span className="block">
+                    <span data-fit="1" className="inline-block whitespace-nowrap text-[10vw]">
+                      Zdaj tudi <span className="text-brand">digitalno.</span>
+                    </span>
+                  </span>
+                </span>
+
+                {/* Mobile 4-line solid */}
+                <span className="block nav:hidden">
+                  <span className="block">
+                    <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                      Gradimo v
+                    </span>
+                  </span>
+                  <span className="block">
+                    <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                      prostoru.
+                    </span>
+                  </span>
+                  <span className="block">
+                    <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw]">
+                      Zdaj tudi
+                    </span>
+                  </span>
+                  <span className="block">
+                    <span data-fit="1" className="inline-block whitespace-nowrap text-[22vw] text-brand">
+                      digitalno.
+                    </span>
+                  </span>
+                </span>
+              </h2>
+
+              {/* Bottom digital web spec */}
+              <div
+                aria-hidden
+                className="absolute right-0 -bottom-7 flex flex-wrap justify-end gap-x-4 gap-y-1 font-mono text-[10px] font-medium tracking-[.12em] text-brand nav:text-[11px]"
+              >
+                <span>&lt;h2&gt; · MREŽA 8 PX</span>
+                <span className="hidden text-white/55 sm:inline">SPLETNA STRAN</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Vertical Divider Line + Draggable PROSTOR · ZASLON Pill */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-y-12 left-0 z-20 w-0 nav:-inset-y-14"
+            style={{ transform: "translateX(var(--x, 50%))" }}
+          >
+            <div className="absolute inset-y-0 left-0 w-px bg-brand" />
+            <div className="absolute top-1/2 left-0 flex h-11 -translate-x-1/2 -translate-y-1/2 items-center gap-2.5 rounded-full bg-brand px-4 font-mono text-[10px] font-bold tracking-[.14em] whitespace-nowrap text-black shadow-[0_0_0_6px_rgba(0,0,0,0.65)] nav:h-12 nav:text-[11px]">
+              <span>◂</span>
+              <span>PROSTOR · ZASLON</span>
+              <span>▸</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Middle 2-Column Editorial Statement + Live-Synced Architectural Comparison Table */}
+        <div
+          className={cn(
+            "grid grid-cols-1 items-start gap-10 transition-[opacity,translate] duration-900 ease-smooth nav:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] nav:gap-[clamp(36px,5vw,92px)]",
+            !revealed && "translate-y-6 opacity-0",
+          )}
+        >
+          <div className="flex flex-col items-start gap-6">
+            <p className="m-0 font-display text-[clamp(26px,2.5vw,40px)] leading-[1.12] font-bold tracking-[-.032em] text-white/55 text-pretty">
               Ista natančnost. Ista odgovornost.{" "}
-              <span className="font-medium text-white">Nov medij.</span>
+              <span className="text-white">Nov medij.</span>
             </p>
-
+            <p className="m-0 max-w-[520px] text-[clamp(15.5px,1.15vw,18.5px)] leading-[1.58] text-pretty text-soft">
+              Za PG Digital stoji inženirsko podjetje. Spletne strani gradimo po enakih pravilih
+              kot objekte: najprej načrt, potem izvedba brez bližnjic.
+            </p>
             <a
-              ref={(el) => {
-                partRefs.current[4] = el;
-              }}
               href="#storitve"
               data-cursor="link"
-              className="group mt-5 hidden items-center gap-2.5 border-b border-white/25 pb-2.5 font-display text-[15px] font-bold text-white transition-colors duration-300 hover:border-brand hover:text-brand nav:inline-flex"
+              className="group inline-flex h-[52px] items-center gap-2.5 rounded-full border border-white/22 px-7 font-display text-[15px] font-bold text-white transition-colors duration-300 hover:border-brand hover:text-brand"
             >
               <span>Kaj gradimo</span>
               <ArrowRightIcon
@@ -184,132 +381,89 @@ export const OriginStage = forwardRef<OriginStageHandle>(function OriginStage(_,
             </a>
           </div>
 
-          {/* Right (Desktop): "Isti standard · Prostor -> Zaslon" Blueprint Comparison Card */}
-          <div
-            ref={panelRef}
-            className="hidden flex-col overflow-hidden rounded-[16px] border border-white/12 bg-[#0b0b0e]/96 shadow-[0_36px_76px_rgba(0,0,0,0.65)] backdrop-blur-[12px] will-change-transform nav:flex"
-            style={{ opacity: 0 }}
-          >
-            {/* Card Header */}
-            <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] px-6 py-3.5 font-mono text-[10.5px] font-semibold tracking-[.14em] uppercase">
-              <span className="text-muted">ISTI STANDARD</span>
-              <span className="inline-flex items-center gap-1.5 text-brand">
-                <span>PROSTOR</span>
-                <ArrowRightIcon size={13} />
-                <span>ZASLON</span>
-              </span>
+          {/* 3-Column Comparison Table synced in real time to --p */}
+          <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)_minmax(0,1fr)] overflow-hidden rounded-xl border border-white/10 bg-[#0a0a0a] text-[clamp(13.5px,1.05vw,16.5px)]">
+            <div className="border-b border-white/10 px-3.5 py-4 font-mono text-[9.5px] font-semibold tracking-[.16em] text-white/45 sm:px-5 sm:text-[10px]">
+              ISTI STANDARD
+            </div>
+            <div
+              className="border-b border-l border-white/10 px-3.5 py-4 font-mono text-[9.5px] font-semibold tracking-[.16em] text-white sm:px-5 sm:text-[10px]"
+              style={{ opacity: "calc(0.32 + 0.68 * var(--p, 0.5))" }}
+            >
+              GRADBENI NAČRT
+            </div>
+            <div
+              className="border-b border-l border-white/10 bg-brand/[0.06] px-3.5 py-4 font-mono text-[9.5px] font-semibold tracking-[.16em] text-brand sm:px-5 sm:text-[10px]"
+              style={{ opacity: "calc(0.32 + 0.68 * (1 - var(--p, 0.5)))" }}
+            >
+              SPLETNA MREŽA
             </div>
 
-            {/* Side-by-side Technical Blueprint Diagrams (1200 mm vs 1200 px) */}
-            <div className="grid grid-cols-2 border-b border-white/[0.08]">
-              {/* Left: Gradbeni načrt */}
-              <div className="flex flex-col gap-4 border-r border-white/[0.08] p-5">
-                <span className="font-mono text-[10.5px] font-semibold tracking-[.14em] uppercase text-muted">
-                  GRADBENI NAČRT
-                </span>
-                <div className="relative mt-2 ml-4 h-[92px] rounded-[2px] border-[1.5px] border-dashed border-white/40">
-                  <div className="absolute inset-x-0 -top-[18px] flex items-center gap-1.5">
-                    <span className="h-2 w-px bg-white/45" />
-                    <span className="h-px flex-1 bg-white/45" />
-                    <span className="font-mono text-[9.5px] text-soft tabular-nums">1200 mm</span>
-                    <span className="h-px flex-1 bg-white/45" />
-                    <span className="h-2 w-px bg-white/45" />
-                  </div>
-                  <div className="absolute inset-y-0 -left-4 flex flex-col items-center gap-1">
-                    <span className="h-px w-2 bg-white/45" />
-                    <span className="w-px flex-1 bg-white/45" />
-                    <span className="h-px w-2 bg-white/45" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Spletna mreža */}
-              <div className="flex flex-col gap-4 bg-brand/[0.06] p-5">
-                <span className="font-mono text-[10.5px] font-semibold tracking-[.14em] uppercase text-brand">
-                  SPLETNA MREŽA
-                </span>
-                <div className="relative mt-2 ml-4 h-[92px] rounded-[10px] border-[1.5px] border-brand bg-[linear-gradient(90deg,rgba(245,117,30,0.18)_1px,transparent_1px)] bg-[length:8.333%_100%]">
-                  <div className="absolute inset-x-0 -top-[18px] flex items-center gap-1.5">
-                    <span className="h-2 w-px bg-white/45" />
-                    <span className="h-px flex-1 bg-white/45" />
-                    <span className="font-mono text-[9.5px] text-soft tabular-nums">1200 px</span>
-                    <span className="h-px flex-1 bg-white/45" />
-                    <span className="h-2 w-px bg-white/45" />
-                  </div>
-                  <div className="absolute inset-y-0 -left-4 flex flex-col items-center gap-1">
-                    <span className="h-px w-2 bg-white/45" />
-                    <span className="w-px flex-1 bg-white/45" />
-                    <span className="h-px w-2 bg-white/45" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Three Engineering Standard Comparison Rows */}
-            {COMPARE_ROWS.map((row, idx) => (
-              <div
-                key={row.label}
-                className={
-                  "grid grid-cols-2 " +
-                  (idx < COMPARE_ROWS.length - 1 ? "border-b border-white/[0.08]" : "")
-                }
-              >
-                <div className="flex flex-col gap-0.5 border-r border-white/[0.08] px-6 py-3">
-                  <span className="font-mono text-[9.5px] font-semibold tracking-[.14em] uppercase text-dim">
+            {COMPARE_ROWS.map((row, idx) => {
+              const borderClass = idx < COMPARE_ROWS.length - 1 ? "border-b border-white/[0.06]" : "";
+              return (
+                <div key={row.label} className="contents">
+                  <div
+                    className={cn(
+                      "px-3.5 py-4 font-mono text-[9.5px] tracking-[.14em] text-white/45 sm:px-5 sm:py-5 sm:text-[10px]",
+                      borderClass,
+                    )}
+                  >
                     {row.label}
-                  </span>
-                  <span className="text-[15px] font-semibold text-soft">{row.physical}</span>
+                  </div>
+                  <div
+                    className={cn(
+                      "border-l border-white/10 px-3.5 py-4 font-display font-bold text-white sm:px-5 sm:py-5",
+                      borderClass,
+                    )}
+                    style={{ opacity: "calc(0.32 + 0.68 * var(--p, 0.5))" }}
+                  >
+                    {row.physical}
+                  </div>
+                  <div
+                    className={cn(
+                      "border-l border-white/10 bg-brand/[0.06] px-3.5 py-4 font-display font-bold text-white sm:px-5 sm:py-5",
+                      borderClass,
+                    )}
+                    style={{ opacity: "calc(0.32 + 0.68 * (1 - var(--p, 0.5)))" }}
+                  >
+                    {row.digital}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-0.5 bg-brand/[0.06] px-6 py-3">
-                  <span className="font-mono text-[9.5px] font-semibold tracking-[.14em] uppercase text-dim">
-                    {row.label}
-                  </span>
-                  <span className="text-[15px] font-semibold text-white">{row.digital}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Three Frosted Dark Architectural Pillar Cards with Crisp Bespoke Icons */}
-        <div className="grid w-full grid-cols-1 gap-2.5 nav:grid-cols-3 nav:gap-4">
-          {PILLARS.map(({ index, Icon, title, description }, idx) => (
+        {/* Bottom Three Clean Hairline Architectural Pillars */}
+        <div
+          className={cn(
+            "grid w-full grid-cols-1 gap-8 transition-[opacity,translate] delay-150 duration-900 ease-smooth nav:grid-cols-3 nav:gap-12",
+            !revealed && "translate-y-6 opacity-0",
+          )}
+        >
+          {PILLARS.map(({ index, Icon, title, description }) => (
             <div
               key={index}
-              ref={(el) => {
-                pillarRefs.current[idx] = el;
-              }}
-              className="relative flex flex-col justify-between gap-2 rounded-[12px] border border-white/12 bg-[#0b0b0e]/95 px-4 py-3 backdrop-blur-[10px] transition-colors duration-300 hover:border-brand/50 nav:gap-5 nav:rounded-[16px] nav:p-6"
-              style={{ opacity: 0 }}
+              className="relative flex flex-col gap-3 border-t border-white/12 pt-6"
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-7 items-center justify-center rounded-[8px] border border-brand/30 bg-brand/10 text-brand nav:size-9 nav:rounded-[10px]">
-                    <Icon size={16} className="nav:size-[18px]" />
-                  </span>
-                  <span className="eyebrow-sm text-brand nav:eyebrow">{index}</span>
-                </div>
-                <span
-                  ref={(el) => {
-                    ruleRefs.current[idx] = el;
-                  }}
-                  aria-hidden
-                  className="h-[2px] w-7 origin-left bg-brand nav:w-9"
-                  style={{ transform: "scaleX(0)" }}
-                />
+              <span aria-hidden className="absolute -top-px left-0 h-[2px] w-12 bg-brand" />
+              <div className="flex items-center gap-2.5">
+                <Icon size={17} className="text-brand" />
+                <span className="font-mono text-[12px] font-bold tracking-[.16em] text-brand">
+                  {index}
+                </span>
               </div>
-              <div className="flex flex-col gap-0.5 nav:gap-1.5">
-                <h3 className="text-[14px] font-extrabold tracking-[-0.025em] text-white nav:text-[clamp(18px,1.5vw,23px)] nav:leading-[1.1]">
-                  {title}
-                </h3>
-                <p className="text-[12px] leading-snug text-pretty text-white/60 nav:text-[14.5px] nav:leading-[1.52] nav:text-soft">
-                  {description}
-                </p>
-              </div>
+              <h3 className="m-0 font-display text-[clamp(22px,1.7vw,28px)] leading-[1.1] font-extrabold tracking-[-.035em] text-white">
+                {title}
+              </h3>
+              <p className="m-0 text-[15.5px] leading-[1.58] text-pretty text-soft">
+                {description}
+              </p>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
-});
+}

@@ -20,11 +20,11 @@
   /* Warm Architectural Stone (light chapters) */
   --color-paper: #f4f1ec;
   --color-paper-soft: #eae5dd;
-  --color-ink: #0b0b0c;
+  --color-ink: #0a0a0a;
   --color-ink-soft: #3a3835;
   --color-ink-muted: #66635e;
-  --color-ink-line: rgba(11, 11, 12, 0.12);
-  --color-ink-line-strong: rgba(11, 11, 12, 0.24);
+  --color-ink-line: rgba(10, 10, 10, 0.12);
+  --color-ink-line-strong: rgba(10, 10, 10, 0.24);
 
   --breakpoint-nav: 56.25rem; /* 900px — desktop navigation */
 
@@ -116,25 +116,6 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.16em;
-}
-
-/* Signature PG Digital architectural grid + vertex-dot mesh across dark & light sections. */
-@utility bg-mesh-dark {
-  background-image:
-    radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.22) 1px, transparent 1px),
-    linear-gradient(to right, rgba(255, 255, 255, 0.036) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.036) 1px, transparent 1px);
-  background-size: 32px 32px;
-  background-position: -0.5px -0.5px;
-}
-
-@utility bg-mesh-light {
-  background-image:
-    radial-gradient(circle at 0 0, rgba(11, 11, 12, 0.17) 1px, transparent 1px),
-    linear-gradient(to right, rgba(11, 11, 12, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(11, 11, 12, 0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
-  background-position: -0.5px -0.5px;
 }
 
 @layer base {

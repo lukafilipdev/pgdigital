@@ -99,7 +99,7 @@ export class HeroScene {
   render(frame: HeroFrame) {
     const { ctx, width: W, height: H, dpr } = this;
     const { t, phases, lens, lensRadius, mouse, activeLayer, reducedMotion } = frame;
-    const { open: a, layers, build, merge: m, outro } = phases;
+    const { open: a, layers, build, merge: m } = phases;
     if (!W || !H) return;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -118,7 +118,7 @@ export class HeroScene {
 
     const gridTarget = activeLayer >= 0 ? GRID_LEVEL.layers[activeLayer] : GRID_LEVEL.idle;
     this.gridLevel = reducedMotion ? gridTarget : approach(this.gridLevel, gridTarget, 0.05);
-    const meshAlpha = Math.max((1 - m) * (1 - 0.35 * layers[0]) * this.gridLevel, outro * 0.9);
+    const meshAlpha = (1 - m) * (1 - 0.35 * layers[0]) * this.gridLevel;
 
     if (meshAlpha > 0.01 || lensRadius > 1) {
       this.mesh.update({

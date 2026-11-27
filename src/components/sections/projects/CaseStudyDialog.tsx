@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ArrowRightIcon, ArrowUpRightIcon, CloseIcon } from "@/components/ui/Icons";
 import { PROJECTS } from "@/content/site";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -93,9 +94,10 @@ export function CaseStudyDialog({ index, origin, onNext, onClose }: CaseStudyDia
           type="button"
           onClick={close}
           data-cursor="link"
-          className="eyebrow h-10 shrink-0 cursor-pointer rounded-full border border-white/25 bg-black/70 px-[18px] whitespace-nowrap text-white transition-colors hover:border-brand hover:text-brand"
+          className="eyebrow inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-white/25 bg-black/70 px-[18px] whitespace-nowrap text-white transition-colors hover:border-brand hover:text-brand"
         >
-          ZAPRI ×
+          <span>ZAPRI</span>
+          <CloseIcon size={14} />
         </button>
       </div>
 
@@ -129,9 +131,10 @@ export function CaseStudyDialog({ index, origin, onNext, onClose }: CaseStudyDia
               target="_blank"
               rel="noopener noreferrer"
               data-cursor="link"
-              className="eyebrow inline-flex h-12 items-center rounded-full border border-white/22 px-6 text-white transition-colors duration-300 hover:border-brand hover:bg-brand hover:text-black"
+              className="eyebrow inline-flex h-12 items-center gap-2 rounded-full border border-white/22 px-6 text-white transition-colors duration-300 hover:border-brand hover:bg-brand hover:text-black"
             >
-              OBIŠČI SPLETNO STRAN ↗
+              <span>OBIŠČI SPLETNO STRAN</span>
+              <ArrowUpRightIcon size={15} />
             </a>
           </div>
           <dl className="eyebrow flex flex-col border-b border-line-strong text-muted">
@@ -152,11 +155,15 @@ export function CaseStudyDialog({ index, origin, onNext, onClose }: CaseStudyDia
           type="button"
           onClick={showNext}
           data-cursor="link"
-          className="flex cursor-pointer flex-col gap-3 border-t border-line-strong pt-7 text-left"
+          className="group flex cursor-pointer flex-col gap-3 border-t border-line-strong pt-7 text-left"
         >
           <span className="eyebrow text-muted">NASLEDNJI PROJEKT</span>
-          <span className="text-[clamp(34px,5vw,90px)] leading-[.95] font-extrabold tracking-[-.06em]">
-            {next.title} →
+          <span className="inline-flex items-center gap-4 text-[clamp(34px,5vw,90px)] leading-[.95] font-extrabold tracking-[-.06em]">
+            <span>{next.title}</span>
+            <ArrowRightIcon
+              size={36}
+              className="shrink-0 text-brand transition-transform duration-300 group-hover:translate-x-2"
+            />
           </span>
         </button>
       </div>

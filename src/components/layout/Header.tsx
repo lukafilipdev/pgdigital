@@ -46,7 +46,7 @@ export function Header() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 flex h-[72px] items-center justify-between gap-6 px-[clamp(18px,3vw,44px)] nav:h-[82px]",
+          "fixed inset-x-0 top-0 z-50 flex h-[72px] items-center justify-between gap-6 px-[clamp(18px,3vw,64px)] nav:h-[82px]",
           "border-b transition-[background-color,border-color,color,backdrop-filter] duration-500",
           !scrolled && "border-transparent bg-transparent",
           scrolled && !isLight && "border-white/8 bg-black/72 backdrop-blur-[14px]",
@@ -73,8 +73,8 @@ export function Header() {
           className={cn(
             "hidden items-center gap-1 rounded-full border p-1.5 backdrop-blur-[12px] transition-[background-color,border-color] duration-400 nav:flex",
             isLight
-              ? "border-ink/10 bg-white/65 shadow-[0_2px_12px_rgba(8,8,12,0.05)]"
-              : "border-white/10 bg-[#141416]/75 shadow-[0_4px_20px_rgba(0,0,0,0.35)]",
+              ? "border-ink/10 bg-white/70 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+              : "border-white/10 bg-[#111111]/80 shadow-[0_4px_20px_rgba(0,0,0,0.35)]",
           )}
         >
           {NAV_LINKS.map(({ id, label }) => {
@@ -90,7 +90,7 @@ export function Header() {
                   "relative flex items-center gap-2 rounded-full px-4 py-2 transition-[background-color,color,box-shadow] duration-300 ease-smooth",
                   isLight
                     ? isActive
-                      ? "bg-white font-bold text-ink shadow-[0_1px_3px_rgba(8,8,12,0.1)]"
+                      ? "bg-white font-bold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
                       : "text-ink/65 hover:bg-ink/[0.04] hover:text-ink focus-visible:text-ink"
                     : isActive
                       ? "bg-white/[0.11] font-bold text-white"
@@ -138,12 +138,17 @@ export function Header() {
           aria-label="Odpri meni"
           aria-expanded={menuOpen}
           className={cn(
-            "flex h-11 items-center gap-2.5 rounded-full border-[1.5px] px-5 font-display text-[12px] font-extrabold tracking-[.1em] transition-colors duration-350 nav:hidden",
-            isLight ? "border-ink/45 bg-ink/[0.04] text-ink" : "border-white/45 bg-white/[0.06] text-white",
+            "inline-flex h-11 shrink-0 cursor-pointer items-center gap-3 rounded-full border pr-4 pl-5 font-display text-[12.5px] font-extrabold tracking-[.08em] backdrop-blur-[12px] transition-colors duration-350 nav:hidden",
+            isLight
+              ? "border-ink/18 bg-white/75 text-ink hover:border-ink/40"
+              : "border-white/16 bg-[#0e0e0e]/80 text-white hover:border-brand",
           )}
         >
-          <span aria-hidden className="size-1.5 rounded-full bg-brand" />
-          MENI
+          <span>MENI</span>
+          <span aria-hidden className="flex flex-col items-end gap-[5px]">
+            <span className="h-[1.5px] w-[18px] bg-current" />
+            <span className="h-[1.5px] w-[12px] bg-brand" />
+          </span>
         </button>
 
         {/* Global bold orange scroll-progress bar */}

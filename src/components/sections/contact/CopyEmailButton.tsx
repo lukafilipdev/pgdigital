@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckIcon, CopyIcon } from "@/components/ui/Icons";
+import { CheckIcon } from "@/components/ui/Icons";
 import { cn } from "@/lib/cn";
 
 export function CopyEmailButton({ email }: { email: string }) {
@@ -27,13 +27,13 @@ export function CopyEmailButton({ email }: { email: string }) {
       data-cursor="link"
       onClick={handleCopy}
       className={cn(
-        "eyebrow-sm inline-flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-2 transition-colors duration-250",
+        "inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-full border px-4 font-mono text-[10px] font-bold tracking-[.16em] transition-colors duration-250",
         copied
-          ? "border-brand bg-brand/10 text-brand"
-          : "border-white/20 bg-black/40 text-paper/85 hover:border-brand hover:text-paper",
+          ? "border-brand text-brand"
+          : "border-white/20 bg-transparent text-white hover:border-brand hover:text-brand",
       )}
     >
-      {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
+      {copied && <CheckIcon size={12} strokeWidth={2.4} />}
       <span>{copied ? "KOPIRANO" : "KOPIRAJ"}</span>
     </button>
   );

@@ -39,12 +39,12 @@ const PUNCTUATION = /^[{}()=>;.,/]$/;
 function tokenColor(token: string, tone: "dark" | "light") {
   if (tone === "light") {
     if (token.startsWith("//")) return "rgba(185,73,12,.72)";
-    if (token[0] === '"' || token[0] === "'") return "rgba(11,11,12,.82)";
+    if (token[0] === '"' || token[0] === "'") return "rgba(10,10,10,.82)";
     if (KEYWORD.test(token)) return "#c8520d";
-    if (token[0] === "<") return "#0b0b0c";
-    if (PUNCTUATION.test(token)) return "rgba(11,11,12,.3)";
+    if (token[0] === "<") return "#0a0a0a";
+    if (PUNCTUATION.test(token)) return "rgba(10,10,10,.3)";
     if (/^\d/.test(token)) return "#b9490c";
-    return "rgba(11,11,12,.52)";
+    return "rgba(10,10,10,.52)";
   }
   if (token.startsWith("//")) return "rgba(245,117,30,.8)";
   if (token[0] === '"' || token[0] === "'") return "rgba(255,255,255,.95)";
@@ -58,7 +58,7 @@ function tokenColor(token: string, tone: "dark" | "light") {
 /** Repeating source columns cover the viewport, including both outer edges. */
 export function paintCode(pen: Pen, w: number, h: number, tone: "dark" | "light" = "dark") {
   const { ctx } = pen;
-  ctx.fillStyle = tone === "light" ? "#ece8e0" : "#050507";
+  ctx.fillStyle = tone === "light" ? "#ece8e0" : "#050505";
   ctx.fillRect(0, 0, w, h);
 
   const fontSize = Math.max(11, Math.min(w, h) * 0.018);

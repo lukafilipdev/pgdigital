@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { useIntro } from "@/components/intro/IntroProvider";
-import { ArrowRightIcon } from "@/components/ui/Icons";
+import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/Icons";
 import { Kicker } from "@/components/ui/Kicker";
 import { HERO_LAYERS, PROJECTS, projectScreenshot } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
@@ -16,60 +16,53 @@ import { HeroScene, type HeroPhases } from "./engine/HeroScene";
 import type { LensState } from "./engine/lens";
 import { resolveCanvasFonts } from "./engine/pen";
 import { HeroLayerStack, type HeroLayerStackHandle } from "./HeroLayerStack";
-import { OriginStage, type OriginStageHandle } from "./OriginStage";
-
-const HEADLINE: ReactNode[] = [
-  "Spletna stran,",
-  "ki si jo vaša",
-  <>
-    znamka <span className="text-brand">zasluži.</span>
-  </>,
-];
 
 /**
  * Scroll timeline of the pinned hero, as fractions of its pinned distance.
  *
  *  message → deconstruction → koda → struktura → oblika → izkušnja
- *  → merge → result (hold) → origin statement
+ *  → merge → result (hold) → clean handoff into O nas
  */
 const TIMELINE = {
   /** Headline separates; its baselines become guides; the mesh lies down. */
-  open: [0.02, 0.15],
+  open: [0.02, 0.16],
   /** When each layer starts landing on the stack. */
-  layers: [0.12, 0.26, 0.39, 0.52],
+  layers: [0.13, 0.28, 0.43, 0.58],
   /** How long a layer takes to land. */
-  arrival: 0.06,
+  arrival: 0.065,
   /** Code is typed into the first layer. */
-  code: [0.14, 0.24],
+  code: [0.15, 0.26],
   /** Layers align, merge and the site turns to face the viewer. */
-  merge: [0.65, 0.75],
-  /** The site lays down into the floor of the closing scene. */
-  outro: [0.82, 0.89],
-  /** Buildings turn from physical into digital structures. */
-  digitize: [0.88, 0.97],
+  merge: [0.72, 0.83],
+  /** The finished site fades cleanly out as O nas enters below. */
+  outro: [0.9, 0.99],
+  /** Final phase placeholder for HeroScene interface compatibility. */
+  digitize: [0.92, 1.0],
 } as const;
 
 /** After this long without pointer movement the lens starts wandering. */
-const IDLE_AFTER_MS = 4500;
+const IDLE_AFTER_MS = 3800;
 
 type Simulation = {
   startedAt: number | null;
   progress: number;
   mouse: { x: number; y: number };
   lens: LensState;
+  lensRadius: number;
+  pressed: boolean;
   pulse: number;
   /** Layer whose caption is shown. */
   captionLayer: number;
-  /** Baseline of each headline line, relative to the stage (cached on resize). */
+  /** Baseline of each visible headline line, relative to the stage. */
   baselines: number[];
 };
 
 const range = (P: number, [from, to]: readonly [number, number]) => smoothstep(from, to, P);
 
 /**
- * Pinned, scroll-driven hero: a lens reveals the code under the headline,
- * then a website is built layer by layer, merges into the finished site and
- * hands over to the closing statement about PG's origin.
+ * Pinned, scroll-driven hero: full-width auto-fitted editorial typography with
+ * live X-ray wireframe & spec lens synced to the underlying 3D spring mesh and
+ * source-code canvas, transitioning smoothly into the 4-layer build and O nas.
  */
 export function Hero() {
   const { startedAt: introStartedAt } = useIntro();
@@ -79,13 +72,17 @@ export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const kickerRef = useRef<HTMLDivElement>(null);
-  const descriptionRef = useRef<HTMLParagraphElement>(null);
-  const actionsRef = useRef<HTMLDivElement>(null);
-  const visualCardRef = useRef<HTMLDivElement>(null);
   const introWrapRef = useRef<HTMLDivElement>(null);
-  const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const lineInnerRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const topBarRef = useRef<HTMLDivElement>(null);
+  const coordRef = useRef<HTMLSpanElement>(null);
+  const headWrapRef = useRef<HTMLDivElement>(null);
+  const solidDesktopRef = useRef<HTMLHeadingElement>(null);
+  const solidMobileRef = useRef<HTMLHeadingElement>(null);
+  const xrayDesktopRef = useRef<HTMLDivElement>(null);
+  const xrayMobileRef = useRef<HTMLDivElement>(null);
+  const desktopActionsRef = useRef<HTMLDivElement>(null);
+  const mobileActionsRef = useRef<HTMLDivElement>(null);
+  const bottomBarRef = useRef<HTMLDivElement>(null);
   const ruleRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const captionRef = useRef<HTMLDivElement>(null);
   const captionIndexRef = useRef<HTMLSpanElement>(null);
@@ -94,8 +91,6 @@ export function Hero() {
   const captionTextRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLDivElement>(null);
-  const xrayLabelRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLSpanElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
   const percentRef = useRef<HTMLSpanElement>(null);
@@ -103,12 +98,13 @@ export function Hero() {
   const visible = useInViewport(sectionRef);
   const sceneRef = useRef<HeroScene | null>(null);
   const layerStackRef = useRef<HeroLayerStackHandle>(null);
-  const originStageRef = useRef<OriginStageHandle>(null);
   const sim = useRef<Simulation>({
     startedAt: null,
     progress: 0,
     mouse: { x: 0, y: 0 },
     lens: { x: 0, y: 0, vx: 0, vy: 0 },
+    lensRadius: 0,
+    pressed: false,
     pulse: 0,
     captionLayer: -1,
     baselines: [],
@@ -119,19 +115,63 @@ export function Hero() {
     const scene = new HeroScene(canvasRef.current!, resolveCanvasFonts());
     sceneRef.current = scene;
 
-    const measureBaselines = () => {
-      sim.current.baselines = lineRefs.current.map((line) => {
-        if (!line) return 0;
-        const fontSize = parseFloat(getComputedStyle(line).fontSize);
-        return line.offsetTop + line.offsetHeight - fontSize * 0.17;
+    const fitHeadlines = () => {
+      const wrap = headWrapRef.current;
+      if (!wrap) return;
+      const W = wrap.clientWidth;
+      const H = stage.clientHeight;
+      if (!W || !H) return;
+
+      const isMobile = stage.clientWidth < 900;
+      const solidRoot = isMobile ? solidMobileRef.current : solidDesktopRef.current;
+      const xrayRoot = isMobile ? xrayMobileRef.current : xrayDesktopRef.current;
+      if (!solidRoot || !xrayRoot) return;
+
+      const solidLines = Array.from(solidRoot.querySelectorAll<HTMLElement>("[data-fit]"));
+      const xrayLines = Array.from(xrayRoot.querySelectorAll<HTMLElement>("[data-fit]"));
+      if (!solidLines.length) return;
+
+      // Measure each line at 100px to compute exact width-filling font sizes.
+      const rawSizes = solidLines.map((el) => {
+        el.style.fontSize = "100px";
+        const measured = el.offsetWidth || 1;
+        const ratio = parseFloat(el.dataset.fit || "1");
+        return (100 * W * ratio) / measured;
+      });
+
+      // Keep total headline height comfortably inside the viewport on short screens.
+      const maxHeadHeight = isMobile ? Math.max(220, H - 320) : Math.max(240, H - 270);
+      const totalHeight = rawSizes.reduce((acc, px) => acc + px * 0.92, 0);
+      const scale = totalHeight > maxHeadHeight ? maxHeadHeight / totalHeight : 1;
+      const finalSizes = rawSizes.map((px) => Math.max(22, px * scale));
+
+      solidLines.forEach((el, i) => {
+        el.style.fontSize = `${finalSizes[i].toFixed(2)}px`;
+      });
+      xrayLines.forEach((el, i) => {
+        if (finalSizes[i] != null) el.style.fontSize = `${finalSizes[i].toFixed(2)}px`;
+      });
+
+      xrayRoot.querySelectorAll<HTMLElement>("[data-size]").forEach((badge) => {
+        const idx = Number(badge.dataset.size);
+        badge.textContent = `${Math.round(finalSizes[idx] || 0)}PX`;
+      });
+
+      // Measure baselines for scroll-split horizontal guides.
+      const stageTop = stage.getBoundingClientRect().top;
+      sim.current.baselines = solidLines.map((el) => {
+        const rect = el.getBoundingClientRect();
+        const fs = finalSizes[solidLines.indexOf(el)] || 60;
+        return rect.bottom - stageTop - fs * 0.16;
       });
     };
+
     const resize = () => {
       scene.resize(stage.clientWidth, stage.clientHeight);
-      measureBaselines();
+      fitHeadlines();
     };
     resize();
-    Object.assign(sim.current.lens, { x: scene.width / 2, y: scene.height / 2 });
+    Object.assign(sim.current.lens, { x: scene.width * 0.58, y: scene.height * 0.45 });
 
     const observer = new ResizeObserver(resize);
     observer.observe(stage);
@@ -141,16 +181,40 @@ export function Hero() {
       if (disposed) return;
       scene.refreshTextures();
       layerStackRef.current?.refreshTextures();
-      measureBaselines();
+      fitHeadlines();
     });
 
-    const onPointerDown = () => (sim.current.pulse = 1);
+    // Press-and-hold anywhere on the hero stage (outside links/buttons) to expand the X-ray lens.
+    let holdTimer: ReturnType<typeof setTimeout> | undefined;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!stage.contains(target) || target?.closest("a, button")) return;
+      sim.current.pulse = 1;
+      if (e.pointerType === "touch") {
+        clearTimeout(holdTimer);
+        holdTimer = setTimeout(() => {
+          sim.current.pressed = true;
+        }, 280);
+      } else {
+        sim.current.pressed = true;
+      }
+    };
+    const onPointerUp = () => {
+      clearTimeout(holdTimer);
+      sim.current.pressed = false;
+    };
+
     window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    window.addEventListener("pointerup", onPointerUp, { passive: true });
+    window.addEventListener("pointercancel", onPointerUp, { passive: true });
 
     return () => {
       disposed = true;
+      clearTimeout(holdTimer);
       observer.disconnect();
       window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
       sceneRef.current = null;
     };
   }, []);
@@ -194,35 +258,44 @@ export function Hero() {
     s.mouse.x = approach(s.mouse.x, (pointer.x / window.innerWidth) * 2 - 1, 0.05);
     s.mouse.y = approach(s.mouse.y, (pointer.y / window.innerHeight) * 2 - 1, 0.05);
 
-    // Lens follows the pointer, or wanders on its own when idle.
-    const cx = W / 2;
-    const cy = H * 0.5;
+    // Lens follows the pointer, or glides organically over the headline when idle.
+    const stageRect = stage.getBoundingClientRect();
+    const headRect = headWrapRef.current?.getBoundingClientRect();
+    const ox = headRect ? headRect.left - stageRect.left : 0;
+    const oy = headRect ? headRect.top - stageRect.top : 0;
+    const hw = headRect ? headRect.width : W;
+    const hh = headRect ? headRect.height : H;
+
     const idle = now - pointer.lastMoveAt > IDLE_AFTER_MS;
-    let targetX = cx;
-    let targetY = cy;
+    let targetX = ox + hw * 0.5;
+    let targetY = oy + hh * 0.5;
     if (pointer.active && !idle && !scene.mobile) {
-      targetX = pointer.x;
-      targetY = pointer.y - stage.getBoundingClientRect().top;
+      targetX = pointer.x - stageRect.left;
+      targetY = pointer.y - stageRect.top;
     } else if (!reducedMotion) {
-      // Phones always follow this orbit, independently of touch/scroll events.
-      targetX = cx + W * 0.24 * Math.sin(t * (scene.mobile ? 0.5 : 0.31));
-      targetY = cy + H * (scene.mobile ? 0.16 : 0.11) * Math.sin(t * (scene.mobile ? 0.37 : 0.47) + 1.2);
+      targetX = ox + hw * (0.5 + 0.36 * Math.sin(t * (scene.mobile ? 0.5 : 0.42)));
+      targetY = oy + hh * (0.5 + 0.34 * Math.sin(t * (scene.mobile ? 0.37 : 0.58) + 1.2));
     }
+
     const lens = s.lens;
     const prevX = lens.x;
     const prevY = lens.y;
-    lens.x = approach(lens.x, targetX, 0.075);
-    lens.y = approach(lens.y, targetY, 0.075);
+    const followSpeed = pointer.active && !idle && !scene.mobile ? 0.14 : 0.055;
+    lens.x = approach(lens.x, targetX, followSpeed);
+    lens.y = approach(lens.y, targetY, followSpeed);
     lens.vx = approach(lens.vx, lens.x - prevX, 0.2);
     lens.vy = approach(lens.vy, lens.y - prevY, 0.2);
     s.pulse *= 0.93;
 
-    const grow = reducedMotion ? 1 : introT < 0 ? 0 : easeOutQuart((introT + 0.25) / 1.6);
-    const breathe = reducedMotion ? 1 : 1 + 0.035 * Math.sin(t * 1.1);
-    // Active behind Hero and returns behind O nas (staying clear during the 4-layer build animations).
-    const lensPresence = Math.max(1 - open, outro * 0.92);
-    const lensRadius =
-      (scene.mobile ? Math.min(W * 0.25, H * 0.14) : Math.min(W, H) * 0.25) * grow * breathe * lensPresence * (1 + s.pulse * 0.22);
+    const grow = reducedMotion ? 1 : introT < 0 ? 0 : easeOutQuart((introT + 0.2) / 1.4);
+    const breathe = reducedMotion ? 1 : 1 + 0.025 * Math.sin(t * 1.1);
+    const baseRadius = scene.mobile ? Math.min(W * 0.27, 130) : Math.min(205, Math.min(W, H) * 0.25);
+    const targetRadius =
+      (s.pressed && P < 0.04 ? Math.hypot(W, H) : baseRadius * breathe * (1 + s.pulse * 0.16)) *
+      grow *
+      (1 - open);
+    s.lensRadius = approach(s.lensRadius, targetRadius, s.pressed ? 0.075 : 0.11);
+    const lensRadius = s.lensRadius;
 
     scene.render({
       t,
@@ -246,58 +319,71 @@ export function Hero() {
       reducedMotion,
     });
 
-    // Headline: staggered reveal, mouse parallax, velocity skew, then split
-    // apart — its baselines stay behind as guides that dissolve into the grid.
-    const motion = reducedMotion || scene.mobile ? 0 : 1;
-    const skew = clamp(lens.vx * 0.04, -2, 2) * (1 - open) * motion;
-    const headlineOpacity = String(1 - smoothstep(0.05, 0.13, P));
+    // Sync CSS custom properties on headWrapRef for the X-ray wireframe clip-path & hollow punch-out mask.
+    const wrap = headWrapRef.current;
+    if (wrap) {
+      const lx = lens.x - ox;
+      const ly = lens.y - oy;
+      wrap.style.setProperty("--lx", `${lx.toFixed(1)}px`);
+      wrap.style.setProperty("--ly", `${ly.toFixed(1)}px`);
+      wrap.style.setProperty("--lr", `${Math.max(0, lensRadius).toFixed(1)}px`);
+    }
+
+    // Staggered intro reveal & scroll-split transition for headline rows.
+    const introElapsed = Math.max(0, introT);
+    const introIn = (from: number, to: number) => (reducedMotion ? 1 : smoothstep(from, to, introElapsed));
+    const introExit = 1 - smoothstep(0.015, 0.08, P);
+    const headlineOpacity = 1 - smoothstep(0.05, 0.13, P);
     const ruleGrow = smoothstep(0.015, 0.08, P);
     const ruleOpacity = String(clamp(ruleGrow * 3) * (1 - smoothstep(0.1, 0.17, P)));
-    for (let i = 0; i < HEADLINE.length; i++) {
-      const line = lineRefs.current[i];
-      const inner = lineInnerRefs.current[i];
+
+    const activeSolid = scene.mobile ? solidMobileRef.current : solidDesktopRef.current;
+    const activeXray = scene.mobile ? xrayMobileRef.current : xrayDesktopRef.current;
+    const solidRows = activeSolid ? Array.from(activeSolid.querySelectorAll<HTMLElement>("[data-row]")) : [];
+    const xrayRows = activeXray ? Array.from(activeXray.querySelectorAll<HTMLElement>("[data-row]")) : [];
+
+    solidRows.forEach((row, i) => {
+      const reveal = reducedMotion ? 1 : easeOutQuart((introT - 0.12 - i * 0.11) / 1.1);
+      const offsetY = (i - (solidRows.length - 1) / 2) * open * H * 0.24;
+      const y = (1 - reveal) * 44 + offsetY;
+      const tx = `translate3d(0,${y.toFixed(2)}px,0)`;
+      const op = String(reveal * headlineOpacity);
+      row.style.transform = tx;
+      row.style.opacity = op;
+      if (xrayRows[i]) {
+        xrayRows[i].style.transform = tx;
+        xrayRows[i].style.opacity = op;
+      }
       const rule = ruleRefs.current[i];
-      if (!line || !inner) continue;
-      const reveal = reducedMotion ? 1 : easeOutQuart((introT - 0.15 - i * 0.09) / 1.1);
-      const depth = 6 + i * 5;
-      const offsetY = (i - 1) * open * H * 0.3 - s.mouse.y * depth * 0.6 * motion;
-      inner.style.transform = `translate3d(0,${(1 - reveal) * 112}%,0)`;
-      line.style.transform =
-        `translate3d(${-s.mouse.x * depth * motion}px,${offsetY}px,0) ` +
-        `skewX(${-skew}deg) scale(${1 - open * (i === 1 ? 0.06 : 0)})`;
-      line.style.opacity = headlineOpacity;
       if (rule) {
         rule.style.transform = `translate3d(0,${(s.baselines[i] ?? 0) + offsetY}px,0) scaleX(${ruleGrow})`;
         rule.style.opacity = ruleOpacity;
       }
-    }
+    });
 
-    const introElapsed = Math.max(0, introT);
-    const introIn = (from: number, to: number) => (reducedMotion ? 1 : smoothstep(from, to, introElapsed));
-    const introExit = 1 - smoothstep(0.015, 0.08, P);
-    setStyle(kickerRef, "opacity", introIn(0.4, 1.1) * (1 - smoothstep(0, 0.06, P)));
-    const description = introIn(0.85, 1.55);
-    setStyle(descriptionRef, "opacity", description * introExit);
-    setStyle(descriptionRef, "transform", `translate3d(0,${(1 - description) * 10}px,0)`);
-    const actionsIn = introIn(1.0, 1.7);
-    setStyle(actionsRef, "opacity", actionsIn * introExit);
-    setStyle(actionsRef, "transform", `translate3d(0,${(1 - actionsIn) * 12}px,0)`);
-    const visualIn = introIn(0.75, 1.6);
-    const visualOpacity = visualIn * (1 - smoothstep(0.02, 0.11, P));
-    setStyle(visualCardRef, "opacity", visualOpacity);
-    setStyle(
-      visualCardRef,
-      "transform",
-      `translate3d(${(-s.mouse.x * 10 * motion).toFixed(2)}px,${((1 - visualIn) * 26 + open * -34 - s.mouse.y * 8 * motion).toFixed(2)}px,0)`,
+    setStyle(topBarRef, "opacity", introIn(0.3, 1.0) * introExit);
+    setText(
+      coordRef,
+      `X ${padNumber(clamp(lens.x, 0, W), 4)} · Y ${padNumber(clamp(lens.y, 0, H), 4)} · R ${padNumber(lensRadius, 3)}`,
     );
+
+    const actIn = introIn(0.65, 1.4);
+    setStyle(desktopActionsRef, "opacity", actIn * introExit);
+    setStyle(desktopActionsRef, "transform", `translate3d(0,${(1 - actIn) * 14}px,0)`);
+    setStyle(mobileActionsRef, "opacity", actIn * introExit);
+    setStyle(mobileActionsRef, "transform", `translate3d(0,${(1 - actIn) * 14}px,0)`);
+
+    const bottomIn = introIn(0.8, 1.5);
+    setStyle(bottomBarRef, "opacity", bottomIn * introExit);
+    setStyle(bottomBarRef, "transform", `translate3d(0,${(1 - bottomIn) * 10}px,0)`);
+
     if (introWrapRef.current) {
       introWrapRef.current.style.pointerEvents = P > 0.07 ? "none" : "";
     }
-    setStyle(metaRef, "opacity", introIn(0.9, 1.6) * (1 - outro));
-    setStyle(hintRef, "opacity", 1 - smoothstep(0.01, 0.06, P));
-    setStyle(xrayLabelRef, "opacity", introIn(0.5, 1.3) * (1 - smoothstep(0, 0.1, P)));
 
-    // Progress readout
+    // Scroll progress HUD appears cleanly once scrolling through the 4-layer stack.
+    const scrollHud = smoothstep(0.02, 0.07, P) * (1 - outro);
+    setStyle(metaRef, "opacity", scrollHud);
     setText(percentRef, padNumber(P * 100, 3));
     if (barRef.current) barRef.current.style.transform = `scaleX(${P})`;
     const status =
@@ -324,47 +410,39 @@ export function Hero() {
       s.captionLayer = activeLayer;
     }
     const captionStart = TIMELINE.layers[0] + TIMELINE.arrival * 0.5;
-    const captionOpacity = smoothstep(captionStart, captionStart + 0.03, P) * (1 - smoothstep(TIMELINE.merge[0], TIMELINE.merge[0] + 0.03, P));
+    const captionOpacity =
+      smoothstep(captionStart, captionStart + 0.03, P) *
+      (1 - smoothstep(TIMELINE.merge[0], TIMELINE.merge[0] + 0.03, P));
     setStyle(captionRef, "opacity", captionOpacity);
     setStyle(captionRef, "transform", `translate3d(0,${(1 - captionOpacity) * 14}px,0)`);
 
     // The finished site gets a quiet moment, labelled once.
-    const result = smoothstep(TIMELINE.merge[1] - 0.02, TIMELINE.merge[1] + 0.02, P) * (1 - smoothstep(TIMELINE.outro[0], TIMELINE.outro[0] + 0.025, P));
+    const result =
+      smoothstep(TIMELINE.merge[1] - 0.02, TIMELINE.merge[1] + 0.02, P) *
+      (1 - smoothstep(TIMELINE.outro[0], TIMELINE.outro[0] + 0.03, P));
     setStyle(resultRef, "opacity", result);
 
-    // Closing "O nas" showcase: monumental headline + architectural scale models.
-    originStageRef.current?.update({
-      progress: P,
-      outro,
-      digitize: phases.digitize,
-      mouseX: s.mouse.x,
-      reducedMotion,
-    });
-
-    // Label for the custom cursor while hovering the stage.
-    const cursorLabel = P < 0.06 ? "RAZIŠČI" : activeLayer === 3 ? "VRTI" : "";
+    const cursorLabel = P < 0.06 ? "PRIDRŽI" : activeLayer === 3 ? "VRTI" : "";
     if (stage.dataset.cursorLabel !== cursorLabel) stage.dataset.cursorLabel = cursorLabel;
   }, visible);
 
   return (
-    <section id="domov" ref={sectionRef} aria-label="Uvod" className="relative h-[440vh]">
-      {/* "O nas" anchor: lands on the closing statement of the hero. */}
-      <div id="o-nas" aria-hidden className="pointer-events-none absolute top-[330vh] left-0 size-px" />
-
+    <section id="domov" ref={sectionRef} aria-label="Uvod" className="relative h-[360vh]">
       <div
         ref={stageRef}
         data-cursor="explore"
-        className="sticky top-0 h-svh touch-pan-y overflow-hidden bg-black"
+        className="sticky top-0 h-svh touch-pan-y select-none overflow-hidden bg-black"
       >
         <canvas ref={canvasRef} aria-hidden className="absolute inset-0 block size-full" />
         <HeroLayerStack ref={layerStackRef} />
 
         <div
           ref={introWrapRef}
-          className="hero-intro pointer-events-none absolute inset-0 flex items-center px-[clamp(18px,3.6vw,56px)] pt-[82px] pb-[64px]"
+          className="hero-intro pointer-events-none absolute inset-0 flex flex-col px-[clamp(18px,3vw,64px)] pt-[clamp(86px,11vh,114px)] pb-6"
         >
+          {/* Scroll-split baseline rules */}
           <div aria-hidden className="absolute inset-x-0 top-0">
-            {HEADLINE.map((_, i) => (
+            {[0, 1, 2, 3].map((i) => (
               <span
                 key={i}
                 ref={(el) => {
@@ -372,7 +450,7 @@ export function Hero() {
                 }}
                 className={
                   "absolute inset-x-0 top-0 h-px opacity-0 " +
-                  (i === HEADLINE.length - 1
+                  (i >= 2
                     ? "bg-[linear-gradient(90deg,transparent,rgba(245,117,30,.55)_30%,rgba(245,117,30,.55)_70%,transparent)]"
                     : "bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.2)_25%,rgba(255,255,255,.2)_75%,transparent)]")
                 }
@@ -381,156 +459,350 @@ export function Hero() {
             ))}
           </div>
 
-          <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-10 nav:grid-cols-[minmax(0,1.2fr)_minmax(0,0.92fr)] nav:gap-[clamp(36px,4.5vw,76px)]">
-            {/* Left Column: Pulsing studio kicker, monumental display H1, subtitle, and dual CTA pills */}
-            <div className="flex min-w-0 flex-col items-start gap-[clamp(18px,2.8vh,30px)]">
+          <div className="relative z-10 mx-auto flex w-full max-w-[1480px] flex-1 flex-col">
+            {/* Top studio label + desktop lens readout */}
+            <div
+              ref={topBarRef}
+              className="flex flex-wrap items-center justify-between gap-2 pb-[1.5vh] font-mono text-[clamp(10px,1.2vw,12px)] tracking-[.18em] uppercase text-white/60 opacity-0"
+            >
+              <div className="inline-flex items-center gap-3.5">
+                <span className="font-bold text-brand">01</span>
+                <span aria-hidden className="h-px w-7 bg-white/30" />
+                <span>PG INŽENIRING · DIGITALNI STUDIO</span>
+              </div>
+              <span ref={coordRef} aria-hidden className="hidden tabular-nums text-white/40 nav:inline">
+                X 0000 · Y 0000 · R 000
+              </span>
+            </div>
+
+            {/* Centerpiece: Edge-to-Edge Auto-Fitted Typography + Live X-Ray Wireframe Overlay */}
+            <div className="flex flex-1 flex-col justify-center gap-6 nav:gap-0">
               <div
-                ref={kickerRef}
-                className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/68 px-4 py-2 font-mono text-[11px] font-medium tracking-[.14em] uppercase text-white/85 opacity-0 backdrop-blur-[8px]"
+                ref={headWrapRef}
+                className="relative w-full font-display font-extrabold leading-[.94] tracking-[-.052em]"
               >
-                <span
-                  aria-hidden
-                  className="size-2 shrink-0 rounded-full bg-brand animate-pg-pulse motion-reduce:animate-none"
-                />
-                <span>PG INŽENIRING — DIGITALNI STUDIO</span>
+                {/* ================= DESKTOP HEADLINE (>= 900px) ================= */}
+                <div className="relative hidden nav:block">
+                  {/* Solid Layer — cleanly masked out inside the live X-ray lens circle */}
+                  <h1
+                    ref={solidDesktopRef}
+                    aria-label="Spletna stran, ki si jo vaša znamka zasluži."
+                    className="relative z-10 m-0 text-white"
+                    style={{
+                      WebkitMaskImage:
+                        "radial-gradient(circle at var(--lx, -999px) var(--ly, -999px), transparent calc(var(--lr, 0px) - 1px), #000 var(--lr, 0px))",
+                      maskImage:
+                        "radial-gradient(circle at var(--lx, -999px) var(--ly, -999px), transparent calc(var(--lr, 0px) - 1px), #000 var(--lr, 0px))",
+                    }}
+                  >
+                    <div data-row="" className="opacity-0 will-change-transform">
+                      <span
+                        data-fit="1"
+                        className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[12.5vw]"
+                      >
+                        Spletna stran,
+                      </span>
+                    </div>
+                    <div data-row="" className="opacity-0 will-change-transform">
+                      <span
+                        data-fit="1"
+                        className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[8vw]"
+                      >
+                        ki si jo vaša znamka
+                      </span>
+                    </div>
+                    <div
+                      data-row=""
+                      className="flex items-end gap-[3vw] opacity-0 will-change-transform"
+                    >
+                      <span
+                        data-fit="0.64"
+                        className="inline-block shrink-0 pt-[0.08em] pb-[0.06em] whitespace-nowrap text-[17.5vw] text-brand"
+                      >
+                        zasluži.
+                      </span>
+                    </div>
+                  </h1>
+
+                  {/* Desktop Subtitle & Pill CTAs — sits cleanly above the X-ray mask beside "zasluži." */}
+                  <div
+                    ref={desktopActionsRef}
+                    className="pointer-events-auto absolute right-0 bottom-0 z-30 flex w-[calc(36%-3vw)] flex-col gap-5 pb-[1.4vw] font-sans font-normal tracking-normal leading-[1.5] opacity-0"
+                  >
+                    <p className="m-0 max-w-[440px] text-[clamp(15px,1.15vw,19px)] text-pretty text-white/82 drop-shadow-[0_2px_18px_rgba(0,0,0,0.95)]">
+                      Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati —{" "}
+                      <span className="text-white">od prve skice do lansiranja.</span>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <a
+                        href="#kontakt"
+                        data-cursor="link"
+                        className="group inline-flex h-[52px] items-center gap-2.5 rounded-full bg-brand px-6 font-display text-[15px] font-extrabold tracking-[-.01em] text-black transition-colors duration-300 hover:bg-white"
+                      >
+                        <span>Začnimo projekt</span>
+                        <ArrowRightIcon
+                          size={16}
+                          className="transition-transform duration-300 group-hover:translate-x-1"
+                        />
+                      </a>
+                      <a
+                        href="#projekti"
+                        data-cursor="link"
+                        className="inline-flex h-[52px] items-center rounded-full border border-white/22 bg-black/70 px-6 font-display text-[15px] font-bold tracking-[-.01em] text-white backdrop-blur-[6px] transition-colors duration-300 hover:border-brand hover:text-brand"
+                      >
+                        Oglejte si projekte
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Desktop X-Ray Wireframe & Architectural Spec Overlay (clipped strictly to live lens) */}
+                  <div
+                    ref={xrayDesktopRef}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 z-20 text-transparent [-webkit-text-stroke:1.4px_#F5751E]"
+                    style={{
+                      clipPath:
+                        "circle(var(--lr, 0px) at var(--lx, -999px) var(--ly, -999px))",
+                    }}
+                  >
+                    <div data-row="" className="relative opacity-0 will-change-transform">
+                      <span className="absolute -inset-x-16 top-[0.2em] border-t border-dashed border-white/25" />
+                      <span className="absolute -inset-x-16 bottom-[0.16em] border-t border-brand/55" />
+                      <span className="absolute -top-6 left-0 font-mono text-[12px] font-medium tracking-[.04em] text-brand [-webkit-text-stroke:0]">
+                        &lt;h1 class=&quot;naslov&quot;&gt;
+                      </span>
+                      <span className="absolute -top-6 right-0 font-mono text-[11px] font-medium tracking-[.12em] text-white/70 [-webkit-text-stroke:0]">
+                        FONT-SIZE <span data-size="0" className="text-brand">—</span> · FIT 100 %
+                      </span>
+                      <span
+                        data-fit="1"
+                        className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[12.5vw]"
+                      >
+                        Spletna stran,
+                      </span>
+                    </div>
+
+                    <div data-row="" className="relative opacity-0 will-change-transform">
+                      <span className="absolute -inset-x-16 bottom-[0.16em] border-t border-brand/55" />
+                      <span className="absolute top-1 right-0 font-mono text-[11px] font-medium tracking-[.12em] text-white/70 [-webkit-text-stroke:0]">
+                        FONT-SIZE <span data-size="1" className="text-brand">—</span> · TRACKING −0.052EM
+                      </span>
+                      <span
+                        data-fit="1"
+                        className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[8vw]"
+                      >
+                        ki si jo vaša znamka
+                      </span>
+                    </div>
+
+                    <div
+                      data-row=""
+                      className="relative flex items-end gap-[3vw] opacity-0 will-change-transform"
+                    >
+                      <span className="absolute -inset-x-16 bottom-[0.16em] border-t border-brand/55" />
+                      <span className="relative inline-block shrink-0">
+                        <span
+                          data-fit="0.64"
+                          className="inline-block pt-[0.08em] pb-[0.06em] whitespace-nowrap text-[17.5vw] [-webkit-text-stroke:1.4px_#FFFFFF]"
+                        >
+                          zasluži.
+                        </span>
+                        <span className="absolute -bottom-5 left-0 font-mono text-[11px] font-medium tracking-[.12em] text-white/70 [-webkit-text-stroke:0]">
+                          FONT-SIZE <span data-size="2" className="text-brand">—</span> · BARVA #F5751E
+                        </span>
+                      </span>
+                      <div className="invisible min-w-0 flex-1 pb-[1.8vw]" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ================= MOBILE & TABLET HEADLINE (< 900px) ================= */}
+                <div className="relative leading-[.9] tracking-[-.055em] nav:hidden">
+                  {/* Solid Mobile Layer — cleanly masked out inside the live X-ray lens circle */}
+                  <h1
+                    ref={solidMobileRef}
+                    aria-label="Spletna stran, ki si jo vaša znamka zasluži."
+                    className="relative z-10 m-0 text-white"
+                    style={{
+                      WebkitMaskImage:
+                        "radial-gradient(circle at var(--lx, -999px) var(--ly, -999px), transparent calc(var(--lr, 0px) - 1px), #000 var(--lr, 0px))",
+                      maskImage:
+                        "radial-gradient(circle at var(--lx, -999px) var(--ly, -999px), transparent calc(var(--lr, 0px) - 1px), #000 var(--lr, 0px))",
+                    }}
+                  >
+                    <div data-row="" className="opacity-0 will-change-transform">
+                      <span
+                        data-fit="1"
+                        className="inline-block whitespace-nowrap text-[15vw]"
+                      >
+                        Spletna stran,
+                      </span>
+                    </div>
+                    <div data-row="" className="opacity-0 will-change-transform">
+                      <span
+                        data-fit="1"
+                        className="inline-block whitespace-nowrap text-[15vw]"
+                      >
+                        ki si jo vaša
+                      </span>
+                    </div>
+                    <div data-row="" className="opacity-0 will-change-transform">
+                      <span
+                        data-fit="1"
+                        className="inline-block whitespace-nowrap text-[30vw]"
+                      >
+                        znamka
+                      </span>
+                    </div>
+                    <div data-row="" className="opacity-0 will-change-transform">
+                      <span
+                        data-fit="1"
+                        className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[27vw] text-brand"
+                      >
+                        zasluži.
+                      </span>
+                    </div>
+                  </h1>
+
+                  {/* Mobile X-Ray Wireframe & Architectural Spec Overlay */}
+                  <div
+                    ref={xrayMobileRef}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 z-20 text-transparent [-webkit-text-stroke:1.1px_#F5751E]"
+                    style={{
+                      clipPath:
+                        "circle(var(--lr, 0px) at var(--lx, -999px) var(--ly, -999px))",
+                    }}
+                  >
+                    <div data-row="" className="relative opacity-0 will-change-transform">
+                      <span className="absolute -inset-x-6 bottom-[0.17em] border-t border-brand/55" />
+                      <span className="absolute -top-4 left-0 font-mono text-[10px] font-medium tracking-[.04em] text-brand [-webkit-text-stroke:0]">
+                        &lt;h1 class=&quot;naslov&quot;&gt;
+                      </span>
+                      <span
+                        data-fit="1"
+                        className="inline-block whitespace-nowrap text-[15vw]"
+                      >
+                        Spletna stran,
+                      </span>
+                    </div>
+                    <div data-row="" className="relative opacity-0 will-change-transform">
+                      <span className="absolute -inset-x-6 bottom-[0.17em] border-t border-brand/55" />
+                      <span
+                        data-fit="1"
+                        className="inline-block whitespace-nowrap text-[15vw]"
+                      >
+                        ki si jo vaša
+                      </span>
+                    </div>
+                    <div data-row="" className="relative opacity-0 will-change-transform">
+                      <span className="absolute -inset-x-6 top-[0.2em] border-t border-dashed border-white/25" />
+                      <span className="absolute -inset-x-6 bottom-[0.17em] border-t border-brand/55" />
+                      <span className="absolute top-0.5 right-0 font-mono text-[10px] font-medium tracking-[.12em] text-white/70 [-webkit-text-stroke:0]">
+                        FONT-SIZE <span data-size="2" className="text-brand">—</span>
+                      </span>
+                      <span
+                        data-fit="1"
+                        className="inline-block whitespace-nowrap text-[30vw]"
+                      >
+                        znamka
+                      </span>
+                    </div>
+                    <div data-row="" className="relative opacity-0 will-change-transform">
+                      <span className="absolute -inset-x-6 bottom-[0.17em] border-t border-brand/55" />
+                      <span
+                        data-fit="1"
+                        className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[27vw] [-webkit-text-stroke:1.1px_#FFFFFF]"
+                      >
+                        zasluži.
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <h1
-                aria-label="Spletna stran, ki si jo vaša znamka zasluži."
-                className="text-left text-[clamp(44px,11.5vw,66px)] leading-[.92] font-extrabold tracking-[-.048em] drop-shadow-[0_4px_26px_rgba(0,0,0,0.96)] nav:text-[clamp(56px,6.2vw,112px)]"
-              >
-                {HEADLINE.map((line, i) => (
-                  <span
-                    key={i}
-                    ref={(el) => {
-                      lineRefs.current[i] = el;
-                    }}
-                    aria-hidden
-                    className="block overflow-hidden pr-[.06em] pb-[.06em] will-change-transform"
-                  >
-                    <span
-                      ref={(el) => {
-                        lineInnerRefs.current[i] = el;
-                      }}
-                      className="block"
-                      style={{ transform: "translateY(110%)" }}
-                    >
-                      {line}
-                    </span>
-                  </span>
-                ))}
-              </h1>
-
-              <p
-                ref={descriptionRef}
-                className="hero-description max-w-[500px] rounded-xl bg-black/62 px-4 py-2.5 text-[clamp(15px,1.35vw,19.5px)] leading-[1.5] text-pretty text-white/82 opacity-0 backdrop-blur-[6px]"
-              >
-                Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati — od prve
-                skice do lansiranja.
-              </p>
-
+              {/* Mobile & Tablet Subtitle + Full-Height Pill CTAs */}
               <div
-                ref={actionsRef}
-                className="pointer-events-auto flex flex-wrap items-center gap-3 pt-1 opacity-0"
+                ref={mobileActionsRef}
+                className="pointer-events-auto relative z-20 flex flex-col gap-5 opacity-0 nav:hidden"
               >
-                <a
-                  href="#kontakt"
-                  data-cursor="link"
-                  className="group inline-flex h-[52px] items-center gap-2.5 rounded-full bg-brand px-7 font-display text-[15px] font-extrabold text-[#08080c] transition-colors duration-300 hover:bg-white"
-                >
-                  <span>Začnimo projekt</span>
-                  <ArrowRightIcon
-                    size={16}
-                    className="transition-transform duration-300 group-hover:translate-x-1"
-                  />
-                </a>
-                <a
-                  href="#projekti"
-                  data-cursor="link"
-                  className="inline-flex h-[52px] items-center gap-2 rounded-full border border-white/24 bg-black/55 px-7 font-display text-[15px] font-bold text-white backdrop-blur-[6px] transition-colors duration-300 hover:border-white hover:bg-white/10"
-                >
-                  Oglejte si projekte
-                </a>
+                <p className="hero-description m-0 max-w-[440px] text-[16.5px] leading-[1.5] text-pretty text-white/80">
+                  Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati —{" "}
+                  <span className="text-white">od prve skice do lansiranja.</span>
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  <a
+                    href="#kontakt"
+                    data-cursor="link"
+                    className="group inline-flex min-h-[54px] flex-1 items-center justify-center gap-2 rounded-full bg-brand px-6 font-display text-[15.5px] font-extrabold whitespace-nowrap text-black transition-colors active:bg-white"
+                  >
+                    <span>Začnimo projekt</span>
+                    <ArrowRightIcon size={16} />
+                  </a>
+                  <a
+                    href="#projekti"
+                    data-cursor="link"
+                    className="inline-flex min-h-[54px] flex-1 items-center justify-center rounded-full border border-white/22 bg-black/65 px-6 font-display text-[15.5px] font-extrabold whitespace-nowrap text-white transition-colors active:border-brand active:text-brand"
+                  >
+                    Oglejte si projekte
+                  </a>
+                </div>
               </div>
             </div>
 
-            {/* Right Column (Desktop): Featured project browser preview + floating <Hero /> code snippet */}
+            {/* Bottom Architectural Bar: Latest Published Project Thumbnail + Scroll Cue + X-Ray Hint */}
             <div
-              ref={visualCardRef}
-              className="pointer-events-auto relative hidden pb-11 pl-6 opacity-0 will-change-transform nav:block"
+              ref={bottomBarRef}
+              className="pointer-events-auto mt-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-white/10 pt-4 font-mono text-[clamp(10px,1.2vw,11.5px)] tracking-[.15em] uppercase text-white/55 opacity-0 nav:mt-[2.5vh] nav:pt-5"
             >
               <a
                 href="#projekti"
                 data-cursor="view"
                 data-cursor-label="PROJEKTI"
-                aria-label={`Oglejte si izbrani projekt ${PROJECTS[0].title}`}
-                className="group relative block overflow-hidden rounded-[16px] border border-white/14 bg-[#141418] shadow-[0_38px_80px_rgba(0,0,0,0.62)] transition-[border-color,box-shadow] duration-500 hover:border-brand/50"
+                className="group inline-flex items-center gap-3.5 transition-colors hover:text-brand"
               >
-                <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <span className="size-2.5 rounded-full bg-white/18" />
-                    <span className="size-2.5 rounded-full bg-white/18" />
-                    <span className="size-2.5 rounded-full bg-white/18" />
-                  </div>
-                  <div className="flex flex-1 justify-center">
-                    <span className="rounded-full bg-[#08080c] px-3.5 py-1 font-mono text-[11px] text-white/60">
-                      midnightautostudio.com
-                    </span>
-                  </div>
-                  <span className="w-10" />
-                </div>
-                <div className="relative aspect-[4/2.9] overflow-hidden bg-black">
+                <span className="relative h-[42px] w-[70px] shrink-0 overflow-hidden rounded-md border border-white/14 bg-[#0a0a0a] nav:h-[44px] nav:w-[74px]">
                   <Image
                     src={projectScreenshot(PROJECTS[0].slug, "card")}
                     alt={`Predogled projekta ${PROJECTS[0].title}`}
                     fill
                     priority
-                    sizes="42vw"
-                    className="object-cover object-top transition-transform duration-700 ease-smooth group-hover:scale-[1.03]"
+                    sizes="80px"
+                    className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                   />
-                </div>
+                </span>
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[9.5px] text-brand nav:text-[10.5px]">
+                    NAZADNJE OBJAVLJENO
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 font-display text-[15px] font-extrabold tracking-[-.01em] normal-case text-white transition-colors group-hover:text-brand nav:text-[15.5px]">
+                    <span>{PROJECTS[0].title}</span>
+                    <ArrowUpRightIcon size={14} className="text-brand" />
+                  </span>
+                </span>
               </a>
 
-              {/* Floating orange pill tag */}
-              <div className="pointer-events-none absolute -top-3.5 right-5 flex items-center gap-2 rounded-full bg-brand px-3.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[.12em] uppercase text-[#08080c] shadow-[0_12px_28px_rgba(245,117,30,0.35)]">
-                IZBRANI PROJEKT · 01
-              </div>
-
-              {/* Floating frosted JSX code card with blinking cursor */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute bottom-0 left-0 w-[min(295px,82%)] rounded-[12px] border border-white/14 bg-[#0d0d10]/92 px-5 py-4 font-mono text-[12.5px] leading-[1.75] shadow-[0_24px_48px_rgba(0,0,0,0.65)] backdrop-blur-[12px]"
+                className="hidden items-center gap-3 text-white/65 nav:flex"
               >
-                <div className="flex gap-3.5">
-                  <span className="text-white/28">1</span>
-                  <span className="text-white">&lt;Hero</span>
-                </div>
-                <div className="flex gap-3.5">
-                  <span className="text-white/28">2</span>
-                  <span className="pl-4 text-muted">
-                    naslov=<span className="text-brand">&quot;Vaša znamka&quot;</span>
-                  </span>
-                </div>
-                <div className="flex gap-3.5">
-                  <span className="text-white/28">3</span>
-                  <span className="pl-4 text-muted">
-                    cilj=<span className="text-brand">&quot;izstopati&quot;</span>
-                  </span>
-                </div>
-                <div className="flex items-center gap-3.5">
-                  <span className="text-white/28">4</span>
-                  <span className="inline-flex items-center text-white">
-                    /&gt;
-                    <span className="ml-1.5 inline-block h-[14px] w-[7px] bg-brand animate-pg-blink motion-reduce:animate-none" />
-                  </span>
-                </div>
+                <span className="h-6 w-px bg-[linear-gradient(#f5751e,transparent)]" />
+                <span>POMAKNI</span>
+              </div>
+
+              <div
+                aria-hidden
+                className="flex items-center gap-2.5"
+              >
+                <span className="size-2 shrink-0 rounded-full border border-brand" />
+                <span>
+                  <span className="text-white">POD POVRŠJEM</span> —{" "}
+                  <span className="nav:hidden">tapnite in pridržite</span>
+                  <span className="hidden nav:inline">pridržite za rentgen</span>
+                </span>
               </div>
             </div>
           </div>
-        </div>
-
-        <div ref={xrayLabelRef} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[12%] text-center font-mono text-[10px] tracking-[.2em] text-brand opacity-0 nav:hidden">
-          POD POVRŠJEM / KODA
         </div>
 
         <div
@@ -568,21 +840,13 @@ export function Hero() {
           <Kicker left="REZULTAT" right="ŠTIRI PLASTI · EN SISTEM" />
         </div>
 
-        <OriginStage ref={originStageRef} />
-
+        {/* Scroll progress HUD (appears cleanly while scrolling through the 4-layer stack) */}
         <div
           ref={metaRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-center justify-between px-[clamp(18px,3vw,40px)] font-mono text-[10.5px] tracking-[.16em] text-subtle opacity-0"
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-center justify-end px-[clamp(18px,3vw,64px)] font-mono text-[10.5px] tracking-[.16em] text-subtle opacity-0"
         >
-          <div
-            ref={hintRef}
-            className="absolute bottom-3.5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
-          >
-            <span className="text-soft">POMAKNI</span>
-            <span className="h-[26px] w-px animate-scroll-hint bg-brand motion-reduce:animate-none" />
-          </div>
-          <div className="ml-auto flex items-center justify-end gap-2 nav:gap-3.5">
+          <div className="flex items-center justify-end gap-2 nav:gap-3.5">
             <span ref={statusRef} className="hidden text-soft nav:inline" />
             <span className="relative h-px w-6 overflow-hidden bg-line-strong nav:w-12">
               <span

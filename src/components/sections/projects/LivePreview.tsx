@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ArrowUpRightIcon } from "@/components/ui/Icons";
 import { projectScreenshot, type Project } from "@/content/site";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
@@ -30,8 +31,8 @@ export function LivePreview({ project }: { project: Project }) {
   const phoneSrc = projectScreenshot(project.slug, "phone");
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/[0.12] bg-[#060608]">
-      <div className="eyebrow-sm flex h-12 shrink-0 items-center gap-3 border-b border-white/[0.08] bg-[#0e0e11] px-4 text-muted">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/12 bg-black">
+      <div className="eyebrow-sm flex h-12 shrink-0 items-center gap-3 border-b border-white/[0.08] bg-[#0e0e0e] px-4 text-muted">
         <div className="hidden items-center gap-1.5 sm:flex">
           <span className="size-2 rounded-full bg-white/20" />
           <span className="size-2 rounded-full bg-white/20" />
@@ -61,18 +62,14 @@ export function LivePreview({ project }: { project: Project }) {
           target="_blank"
           rel="noopener noreferrer"
           data-cursor="link"
-          className="hidden transition-colors hover:text-brand sm:inline"
+          className="hidden items-center gap-1 transition-colors hover:text-brand sm:inline-flex"
         >
-          ODPRI ↗
+          <span>ODPRI</span>
+          <ArrowUpRightIcon size={13} />
         </a>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[#040406] p-4 sm:p-7">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(245,117,30,0.08),transparent_65%)]"
-        />
-
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[#060606] p-4 sm:p-7">
         {mode === "desktop" ? (
           <div
             className={cn(
@@ -89,8 +86,8 @@ export function LivePreview({ project }: { project: Project }) {
             />
           </div>
         ) : (
-          <div className="relative h-full max-h-[620px] aspect-[390/844] overflow-hidden rounded-[26px] border-[3px] border-white/20 bg-[#08080a] p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.9)]">
-            <div className="relative size-full overflow-hidden rounded-[20px] bg-black">
+          <div className="relative flex aspect-[390/844] h-full max-h-[620px] overflow-hidden rounded-[26px] border-[3px] border-white/20 bg-black p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.9)]">
+            <div className="relative flex-1 overflow-hidden rounded-[20px] bg-black">
               <Image
                 src={phoneSrc}
                 alt={`Mobilni prikaz spletne strani ${project.title}`}

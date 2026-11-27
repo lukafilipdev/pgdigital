@@ -84,7 +84,7 @@ export function paintHighCraftCode(pen: Pen, typedChars: number, caretVisible: b
   const W = 1024;
   const H = 640;
 
-  ctx.fillStyle = "#070709";
+  ctx.fillStyle = "#070707";
   ctx.fillRect(0, 0, W, H);
 
   // Subtle 12-column architectural grid
@@ -226,7 +226,7 @@ export function paintHighCraftStructure(pen: Pen) {
   const H = 640;
   const m = 56;
 
-  ctx.fillStyle = "#09090b";
+  ctx.fillStyle = "#090909";
   ctx.fillRect(0, 0, W, H);
 
   // 12-column translucent orange bands
@@ -381,7 +381,7 @@ export function paintHighCraftStructure(pen: Pen) {
   ctx.strokeRect(cxBtn - pad, cyBtn - pad, cwBtn + pad * 2, chBtn + pad * 2);
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "#09090b";
+  ctx.fillStyle = "#090909";
   ctx.fillRect(cxBtn, cyBtn, cwBtn, chBtn);
   ctx.strokeStyle = "rgba(255,255,255,0.65)";
   ctx.lineWidth = 1.5;
@@ -465,7 +465,7 @@ export function paintHighCraftForm(pen: Pen) {
   const H = 640;
   const m = 50;
 
-  ctx.fillStyle = "#0a0a0c";
+  ctx.fillStyle = "#0a0a0a";
   ctx.fillRect(0, 0, W, H);
 
   const label = (text: string, x: number, y: number, color = MUTED, align?: CanvasTextAlign) =>
@@ -633,7 +633,7 @@ export function paintHighCraftSite(pen: Pen) {
   const H = 640;
   const m = 56;
 
-  ctx.fillStyle = "#0a0a0b";
+  ctx.fillStyle = "#0a0a0a";
   ctx.fillRect(0, 0, W, H);
 
   // Top-right warm ambient glow
@@ -784,7 +784,7 @@ export function paintHighCraftSite(pen: Pen) {
 /** Paints the browser bar strip (`vasaznamka.si`) cleanly for the merged Rezultat reveal. */
 export function paintBrowserChrome(pen: Pen, w: number, h: number) {
   const { ctx } = pen;
-  ctx.fillStyle = "#141416";
+  ctx.fillStyle = "#141414";
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "rgba(255,255,255,0.16)";
   ctx.fillRect(0, h - 1.5, w, 1.5);
@@ -849,7 +849,7 @@ function paintArchitecturalPavilion(ctx: CanvasRenderingContext2D, x: number, y:
 
   // Sky
   const sky = ctx.createLinearGradient(0, 0, 0, 402);
-  sky.addColorStop(0, "#09090b");
+  sky.addColorStop(0, "#090909");
   sky.addColorStop(0.55, "#18110c");
   sky.addColorStop(1, "#381a08");
   ctx.fillStyle = sky;
@@ -900,7 +900,7 @@ function paintArchitecturalPavilion(ctx: CanvasRenderingContext2D, x: number, y:
   ctx.fill();
 
   // Background tower
-  ctx.fillStyle = "#121216";
+  ctx.fillStyle = "#121212";
   ctx.strokeStyle = "rgba(255,255,255,0.18)";
   ctx.lineWidth = 1.6;
   poly(ctx, [[246, 112], [318, 128], [318, 296], [246, 296]]);
@@ -914,8 +914,8 @@ function paintArchitecturalPavilion(ctx: CanvasRenderingContext2D, x: number, y:
 
   // Foreground architectural pavilion
   const frontGrad = ctx.createLinearGradient(0, 134, 0, 296);
-  frontGrad.addColorStop(0, "#1f1f24");
-  frontGrad.addColorStop(1, "#0a0a0c");
+  frontGrad.addColorStop(0, "#1f1f1f");
+  frontGrad.addColorStop(1, "#0a0a0a");
   ctx.fillStyle = frontGrad;
   ctx.strokeStyle = "rgba(255,255,255,0.3)";
   ctx.lineWidth = 1.8;
@@ -933,7 +933,7 @@ function paintArchitecturalPavilion(ctx: CanvasRenderingContext2D, x: number, y:
   ctx.stroke();
 
   // Cantilevered roof slab
-  ctx.fillStyle = "#26262c";
+  ctx.fillStyle = "#262626";
   ctx.strokeStyle = "rgba(255,255,255,0.4)";
   poly(ctx, [[56, 154], [264, 126], [344, 154], [262, 138]]);
   ctx.fill();
@@ -969,7 +969,7 @@ function paintArchitecturalPavilion(ctx: CanvasRenderingContext2D, x: number, y:
   ctx.stroke();
 
   // Mullions
-  ctx.strokeStyle = "#0b0b0d";
+  ctx.strokeStyle = "#0b0b0b";
   ctx.lineWidth = 2.6;
   ctx.beginPath();
   ctx.moveTo(142, 168);
@@ -979,7 +979,7 @@ function paintArchitecturalPavilion(ctx: CanvasRenderingContext2D, x: number, y:
   ctx.stroke();
 
   // Ground reflection plane
-  ctx.fillStyle = "#070709";
+  ctx.fillStyle = "#070707";
   ctx.fillRect(0, 296, 500, 106);
   ctx.fillStyle = "rgba(245,117,30,0.68)";
   ctx.fillRect(0, 295, 500, 2.2);
@@ -1010,7 +1010,7 @@ function paintCardThumb(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
   ctx.scale(w / 104, h / 74);
 
   if (variant === 0) {
-    ctx.fillStyle = "#0c0c0f";
+    ctx.fillStyle = "#0c0c0c";
     ctx.fillRect(0, 0, 104, 74);
     ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.lineWidth = 1.5;
@@ -1020,7 +1020,7 @@ function paintCardThumb(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
       ctx.lineTo(gx, 74);
     }
     ctx.stroke();
-    ctx.fillStyle = "#16161c";
+    ctx.fillStyle = "#161616";
     ctx.strokeStyle = "rgba(255,255,255,0.36)";
     ctx.fillRect(20, 18, 42, 36);
     ctx.strokeRect(20, 18, 42, 36);
@@ -1033,21 +1033,21 @@ function paintCardThumb(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
     ctx.fillStyle = "rgba(245,117,30,0.6)";
     ctx.fillRect(0, 53.5, 104, 1.8);
   } else if (variant === 1) {
-    ctx.fillStyle = "#0a0a0d";
+    ctx.fillStyle = "#0a0a0a";
     ctx.fillRect(0, 0, 104, 74);
     const g = ctx.createRadialGradient(52, 34, 2, 52, 34, 48);
     g.addColorStop(0, "rgba(245,117,30,0.36)");
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 104, 74);
-    ctx.fillStyle = "#141418";
+    ctx.fillStyle = "#141414";
     ctx.strokeStyle = "rgba(255,255,255,0.24)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.ellipse(52, 56, 28, 6, 0, 0, TAU);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#151519";
+    ctx.fillStyle = "#151515";
     ctx.strokeStyle = "rgba(255,255,255,0.42)";
     if (ctx.roundRect) {
       ctx.beginPath();
@@ -1065,7 +1065,7 @@ function paintCardThumb(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
     ctx.fillStyle = "rgba(255,255,255,0.24)";
     ctx.fillRect(43, 45, 12, 2);
   } else {
-    ctx.fillStyle = "#0a0a0c";
+    ctx.fillStyle = "#0a0a0a";
     ctx.fillRect(0, 0, 104, 74);
     ctx.strokeStyle = "rgba(255,255,255,0.16)";
     ctx.lineWidth = 1.5;
