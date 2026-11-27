@@ -62,7 +62,7 @@ export const SERVICES = [
   {
     name: "E-commerce",
     panelLabel: "SPLETNA TRGOVINA · NAKUPNI TOK",
-    description: "Spletne trgovine, ki prodajajo — od izdelka do plačila brez ovir.",
+    description: "Spletne trgovine, ki prodajajo, od izdelka do plačila brez ovir.",
     tags: "TRGOVINA · PLAČILA · DOSTAVA",
     tagList: ["Trgovina", "Plačila", "Dostava"],
   },
@@ -148,13 +148,13 @@ export const PROJECTS: Project[] = [
   },
   {
     slug: "pg-inzeniring",
-    title: "PG INŽENIRING",
+    title: "PG Inženiring",
     category: "SPLETNA STRAN",
     year: "2026",
     services: "Oblikovanje · Razvoj",
     languages: "SL",
     summary:
-      "Spletna stran za slovensko gradbeno podjetje, ki projekte vodi od projektiranja do gradnje in nadzora. Umirjena, arhitekturna podoba predstavi storitve jasno — na velikem zaslonu in na telefonu.",
+      "Spletna stran za slovensko gradbeno podjetje, ki projekte vodi od projektiranja do gradnje in nadzora. Umirjena, arhitekturna podoba predstavi storitve jasno na velikem zaslonu in na telefonu.",
     highlights: ["NAMIZNA + MOBILNA", "ARHITEKTURNI UX", "PREDOGLED V ŽIVO"],
     url: "https://www.pg-inzeniring.si/",
     cardView: "phone",

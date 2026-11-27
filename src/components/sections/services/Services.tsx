@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/Icons";
+import {
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+  CodeEngineIcon,
+  CommerceBagIcon,
+  DesignSystemIcon,
+  SpeedShieldIcon,
+} from "@/components/ui/Icons";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { SERVICES } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
@@ -11,12 +18,12 @@ import { cn } from "@/lib/cn";
 
 const AUTO_CYCLE_MS = 5200;
 
-/** Compact display titles so every expanded row scales to monumental editorial size. */
+/** Compact display titles paired with discipline-specific geometric icons. */
 const DISPLAY_TITLES = [
-  { title: "Spletno oblikovanje", code: false, fitRatio: 0.9 },
-  { title: "Spletni razvoj", code: true, fitRatio: 0.88 },
-  { title: "E-commerce", code: false, fitRatio: 0.78 },
-  { title: "Vzdrževanje", code: false, fitRatio: 0.86 },
+  { title: "Spletno oblikovanje", code: false, fitRatio: 0.9, Icon: DesignSystemIcon },
+  { title: "Spletni razvoj", code: true, fitRatio: 0.88, Icon: CodeEngineIcon },
+  { title: "E-commerce", code: false, fitRatio: 0.78, Icon: CommerceBagIcon },
+  { title: "Vzdrževanje", code: false, fitRatio: 0.86, Icon: SpeedShieldIcon },
 ] as const;
 
 /**
@@ -191,7 +198,7 @@ export function Services() {
         {/* Section Header */}
         <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-5">
           <div className="flex flex-col gap-4">
-            <SectionLabel index="03" tone="light">
+            <SectionLabel icon={<DesignSystemIcon size={14} />} tone="light">
               STORITVE
             </SectionLabel>
             <h2
@@ -267,14 +274,16 @@ export function Services() {
                 />
 
                 {/* Title Row */}
-                <div className="grid grid-cols-[clamp(34px,5vw,96px)_minmax(0,1fr)_auto] items-start gap-3">
+                <div className="grid grid-cols-[clamp(38px,5vw,96px)_minmax(0,1fr)_auto] items-start gap-3">
                   <span
                     className={cn(
-                      "pt-[0.55em] font-mono text-[12px] font-bold tracking-[.16em] tabular-nums transition-colors duration-300",
-                      isActive ? "text-brand" : "text-ink-muted",
+                      "mt-1 inline-flex size-9 items-center justify-center rounded-xl border transition-colors duration-300 nav:mt-2 nav:size-11",
+                      isActive
+                        ? "border-brand bg-brand/12 text-brand"
+                        : "border-ink/12 bg-ink/[0.03] text-ink-muted",
                     )}
                   >
-                    {String(index + 1).padStart(2, "0")}
+                    <cfg.Icon size={18} />
                   </span>
 
                   <div data-tcol="" className="min-w-0">
@@ -346,10 +355,13 @@ export function Services() {
                           </span>
                           <span
                             aria-hidden
-                            className="pointer-events-none absolute top-full left-0 mt-2 font-mono text-[10px] font-bold tracking-[.14em] whitespace-nowrap text-ink-soft nav:text-[11px]"
+                            className="pointer-events-none absolute top-full left-0 mt-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-[.14em] whitespace-nowrap text-ink-soft nav:text-[11px]"
                           >
-                            KOŠARICA <span className="text-brand">→</span> DOSTAVA{" "}
-                            <span className="text-brand">→</span> PLAČILO
+                            <span>KOŠARICA</span>
+                            <ArrowRightIcon size={11} className="text-brand" />
+                            <span>DOSTAVA</span>
+                            <ArrowRightIcon size={11} className="text-brand" />
+                            <span>PLAČILO</span>
                           </span>
                         </>
                       )}
@@ -390,7 +402,7 @@ export function Services() {
 
                 {/* Expanded Description & CTA */}
                 {isActive && (
-                  <div className="mt-8 grid grid-cols-[clamp(34px,5vw,96px)_minmax(0,1fr)] gap-3 nav:mt-11">
+                  <div className="mt-8 grid grid-cols-[clamp(38px,5vw,96px)_minmax(0,1fr)] gap-3 nav:mt-11">
                     <span aria-hidden />
                     <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
                       <div className="flex max-w-[540px] flex-col gap-3">

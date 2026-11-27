@@ -32,7 +32,6 @@ export const HeroLayerStack = forwardRef<HeroLayerStackHandle>(function HeroLaye
   const stackRef = useRef<WebGLLayerStack | null>(null);
   const labelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const labelLineRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const labelIndexRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const labelNameRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const dimBarRef = useRef<HTMLDivElement>(null);
 
@@ -71,14 +70,13 @@ export const HeroLayerStack = forwardRef<HeroLayerStackHandle>(function HeroLaye
         el.style.transform = `translate3d(${(anchor.x - 10).toFixed(2)}px, ${anchor.y.toFixed(2)}px, 0) translate3d(-100%, -50%, 0)`;
 
         const color = on > 0.5 ? "#F5751E" : "#FFFFFF";
-        const lineEl = labelLineRefs.current[i];
-        const idxEl = labelIndexRefs.current[i];
+        const dotEl = labelLineRefs.current[i];
         const nameEl = labelNameRefs.current[i];
-        if (lineEl) lineEl.style.backgroundColor = color;
-        if (idxEl) idxEl.style.color = color;
+        if (dotEl) dotEl.style.backgroundColor = color;
         if (nameEl) {
-          nameEl.style.opacity = on.toFixed(3);
-          nameEl.style.transform = `translate3d(${((1 - on) * 8).toFixed(2)}px, 0, 0)`;
+          nameEl.style.color = color;
+          nameEl.style.opacity = (0.45 + on * 0.55).toFixed(3);
+          nameEl.style.transform = `translate3d(${((1 - on) * 6).toFixed(2)}px, 0, 0)`;
         }
       }
 
@@ -102,14 +100,14 @@ export const HeroLayerStack = forwardRef<HeroLayerStackHandle>(function HeroLaye
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       <canvas ref={canvasRef} className="absolute inset-0 block size-full" />
 
-      {/* Crisp native DOM leader callouts ("KODA 01 ——") anchored to each plane's left edge */}
+      {/* Crisp native DOM leader callouts anchored to each plane's left edge */}
       {HERO_LAYERS.map((layer, i) => (
         <div
           key={layer.label}
           ref={(el) => {
             labelRefs.current[i] = el;
           }}
-          className="pointer-events-none absolute top-0 left-0 hidden items-center justify-end gap-2.5 font-mono text-[10.5px] tracking-[0.16em] whitespace-nowrap will-change-transform nav:flex"
+          className="pointer-events-none absolute top-0 left-0 hidden items-center justify-end gap-2 font-mono text-[10.5px] tracking-[0.16em] whitespace-nowrap will-change-transform nav:flex"
           style={{ opacity: 0 }}
         >
           <span
@@ -117,23 +115,15 @@ export const HeroLayerStack = forwardRef<HeroLayerStackHandle>(function HeroLaye
               labelNameRefs.current[i] = el;
             }}
             className="font-semibold text-white"
-            style={{ opacity: 0 }}
+            style={{ opacity: 0.45 }}
           >
             {layer.label}
           </span>
           <span
             ref={(el) => {
-              labelIndexRefs.current[i] = el;
-            }}
-            className="font-semibold tabular-nums"
-          >
-            0{i + 1}
-          </span>
-          <span
-            ref={(el) => {
               labelLineRefs.current[i] = el;
             }}
-            className="inline-block h-px w-7 bg-white"
+            className="inline-block size-1.5 rounded-full bg-white"
           />
         </div>
       ))}

@@ -4,30 +4,30 @@ import { useEffect, useRef } from "react";
 import {
   ArrowRightIcon,
   BespokeLayersIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PartnershipShieldIcon,
   PrecisionIcon,
 } from "@/components/ui/Icons";
+import { SectionLabel } from "@/components/ui/SectionLabel";
 import { useFrame } from "@/hooks/useFrame";
 import { useInViewOnce, useInViewport } from "@/hooks/useInView";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
-import { approach, clamp } from "@/lib/math";
+import { approach, clamp, easeOutQuart } from "@/lib/math";
 
 const PILLARS = [
   {
-    index: "01",
     Icon: PrecisionIcon,
     title: "Inženirska natančnost",
     description: "Vsak razmik, tipografija in vrstica kode imajo jasen namen.",
   },
   {
-    index: "02",
     Icon: BespokeLayersIcon,
     title: "Brez šablon",
-    description: "Spletne strani po meri znamke — od strukture do zadnjega detajla.",
+    description: "Spletne strani po meri znamke, od strukture do zadnjega detajla.",
   },
   {
-    index: "03",
     Icon: PartnershipShieldIcon,
     title: "Dolgoročna odgovornost",
     description: "Za projektom stojimo tudi dolgo po tem, ko gre v živo.",
@@ -48,6 +48,7 @@ const COMPARE_ROWS = [
  */
 export function OriginStage() {
   const sectionRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const pLeftRef = useRef<HTMLSpanElement>(null);
   const pRightRef = useRef<HTMLSpanElement>(null);
@@ -159,6 +160,23 @@ export function OriginStage() {
     if (pRightRef.current && pRightRef.current.textContent !== String(rightPct)) {
       pRightRef.current.textContent = String(rightPct);
     }
+
+    // Seamless scroll-driven materialization right as the finished Hero stage dissolves behind it.
+    const content = contentRef.current;
+    if (content) {
+      if (reducedMotion) {
+        content.style.opacity = "1";
+        content.style.transform = "none";
+        content.style.filter = "none";
+      } else {
+        const vh = window.innerHeight || 1;
+        const top = section.getBoundingClientRect().top;
+        const enter = easeOutQuart(clamp((vh * 1.02 - top) / (vh * 0.56)));
+        content.style.opacity = enter.toFixed(3);
+        content.style.transform = `translate3d(0, ${((1 - enter) * 28).toFixed(1)}px, 0) scale(${(0.955 + enter * 0.045).toFixed(4)})`;
+        content.style.filter = enter < 0.99 ? `blur(${((1 - enter) * 6).toFixed(2)}px)` : "none";
+      }
+    }
   }, visible);
 
   return (
@@ -166,21 +184,25 @@ export function OriginStage() {
       id="o-nas"
       ref={sectionRef}
       aria-labelledby="o-nas-h"
-      className="relative flex min-h-svh flex-col justify-center overflow-hidden bg-black px-[clamp(18px,3vw,64px)] py-[clamp(88px,12vh,148px)] text-white"
+      className="relative z-20 -mt-[100svh] flex min-h-svh flex-col justify-center overflow-hidden bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.92)_12%,#000_24%,#000_100%)] px-[clamp(18px,3vw,64px)] pt-[clamp(76px,10vh,124px)] pb-[clamp(84px,11vh,138px)] text-white"
     >
-      <div className="relative z-10 mx-auto flex w-full max-w-[1480px] flex-col gap-[clamp(44px,6.5vh,76px)]">
-        {/* Top Architectural Bar: Section Index + Live PROSTOR ◂▸ ZASLON Split Readout */}
+      <div
+        ref={contentRef}
+        className="relative z-10 mx-auto flex w-full max-w-[1480px] flex-col gap-[clamp(44px,6.5vh,76px)] will-change-transform"
+      >
+        {/* Top Architectural Bar: Section Label + Live PROSTOR / ZASLON Split Readout */}
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.2vw,12px)] tracking-[.18em] uppercase text-white/60">
-          <div className="inline-flex items-center gap-3.5">
-            <span className="font-bold text-brand">02</span>
-            <span aria-hidden className="h-px w-7 bg-white/30" />
-            <span>IZVOR · PG INŽENIRING</span>
-          </div>
-          <div aria-hidden className="inline-flex items-center gap-3 tabular-nums">
+          <SectionLabel icon={<BespokeLayersIcon size={14} />}>
+            IZVOR · PG INŽENIRING
+          </SectionLabel>
+          <div aria-hidden className="inline-flex items-center gap-2 tabular-nums">
             <span>
               PROSTOR <span ref={pLeftRef} className="text-white">50</span> %
             </span>
-            <span className="text-brand">◂▸</span>
+            <span className="inline-flex items-center text-brand">
+              <ChevronLeftIcon size={12} />
+              <ChevronRightIcon size={12} className="-ml-1" />
+            </span>
             <span>
               ZASLON <span ref={pRightRef} className="text-white">50</span> %
             </span>
@@ -256,7 +278,7 @@ export function OriginStage() {
 
             {/* Bottom physical blueprint spec */}
             <div className="absolute -bottom-7 left-0 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] font-medium tracking-[.12em] text-white/55 [-webkit-text-stroke:0] nav:text-[11px]">
-              <span>GRADBENI NAČRT · A-01</span>
+              <span>GRADBENI NAČRT</span>
               <span className="hidden sm:inline">TOLERANCA ±1 MM</span>
             </div>
           </div>
@@ -344,10 +366,10 @@ export function OriginStage() {
             style={{ transform: "translateX(var(--x, 50%))" }}
           >
             <div className="absolute inset-y-0 left-0 w-px bg-brand" />
-            <div className="absolute top-1/2 left-0 flex h-11 -translate-x-1/2 -translate-y-1/2 items-center gap-2.5 rounded-full bg-brand px-4 font-mono text-[10px] font-bold tracking-[.14em] whitespace-nowrap text-black shadow-[0_0_0_6px_rgba(0,0,0,0.65)] nav:h-12 nav:text-[11px]">
-              <span>◂</span>
+            <div className="absolute top-1/2 left-0 flex h-11 -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full bg-brand px-3.5 font-mono text-[10px] font-bold tracking-[.14em] whitespace-nowrap text-black shadow-[0_0_0_6px_rgba(0,0,0,0.65)] nav:h-12 nav:text-[11px]">
+              <ChevronLeftIcon size={13} strokeWidth={2.4} />
               <span>PROSTOR · ZASLON</span>
-              <span>▸</span>
+              <ChevronRightIcon size={13} strokeWidth={2.4} />
             </div>
           </div>
         </div>
@@ -442,18 +464,15 @@ export function OriginStage() {
             !revealed && "translate-y-6 opacity-0",
           )}
         >
-          {PILLARS.map(({ index, Icon, title, description }) => (
+          {PILLARS.map(({ Icon, title, description }) => (
             <div
-              key={index}
+              key={title}
               className="relative flex flex-col gap-3 border-t border-white/12 pt-6"
             >
               <span aria-hidden className="absolute -top-px left-0 h-[2px] w-12 bg-brand" />
-              <div className="flex items-center gap-2.5">
-                <Icon size={17} className="text-brand" />
-                <span className="font-mono text-[12px] font-bold tracking-[.16em] text-brand">
-                  {index}
-                </span>
-              </div>
+              <span className="inline-flex size-9 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
+                <Icon size={17} />
+              </span>
               <h3 className="m-0 font-display text-[clamp(22px,1.7vw,28px)] leading-[1.1] font-extrabold tracking-[-.035em] text-white">
                 {title}
               </h3>

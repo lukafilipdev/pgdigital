@@ -3,7 +3,13 @@
 import Image from "next/image";
 import { useEffect, useRef, type RefObject } from "react";
 import { useIntro } from "@/components/intro/IntroProvider";
-import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/Icons";
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+  EyeIcon,
+  SparkIcon,
+} from "@/components/ui/Icons";
 import { Kicker } from "@/components/ui/Kicker";
 import { HERO_LAYERS, PROJECTS, projectScreenshot } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
@@ -25,19 +31,19 @@ import { HeroLayerStack, type HeroLayerStackHandle } from "./HeroLayerStack";
  */
 const TIMELINE = {
   /** Headline separates; its baselines become guides; the mesh lies down. */
-  open: [0.02, 0.16],
+  open: [0.02, 0.12],
   /** When each layer starts landing on the stack. */
-  layers: [0.13, 0.28, 0.43, 0.58],
+  layers: [0.1, 0.21, 0.33, 0.45],
   /** How long a layer takes to land. */
-  arrival: 0.065,
+  arrival: 0.055,
   /** Code is typed into the first layer. */
-  code: [0.15, 0.26],
+  code: [0.12, 0.21],
   /** Layers align, merge and the site turns to face the viewer. */
-  merge: [0.72, 0.83],
-  /** The finished site fades cleanly out as O nas enters below. */
-  outro: [0.9, 0.99],
+  merge: [0.54, 0.63],
+  /** Finished site recedes softly right as O nas materializes directly over it. */
+  outro: [0.69, 0.86],
   /** Final phase placeholder for HeroScene interface compatibility. */
-  digitize: [0.92, 1.0],
+  digitize: [0.72, 0.9],
 } as const;
 
 /** After this long without pointer movement the lens starts wandering. */
@@ -85,7 +91,6 @@ export function Hero() {
   const bottomBarRef = useRef<HTMLDivElement>(null);
   const ruleRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const captionRef = useRef<HTMLDivElement>(null);
-  const captionIndexRef = useRef<HTMLSpanElement>(null);
   const captionSpecRef = useRef<HTMLSpanElement>(null);
   const captionNameRef = useRef<HTMLDivElement>(null);
   const captionTextRef = useRef<HTMLDivElement>(null);
@@ -139,8 +144,8 @@ export function Hero() {
         return (100 * W * ratio) / measured;
       });
 
-      // Keep total headline height comfortably inside the viewport on short screens.
-      const maxHeadHeight = isMobile ? Math.max(220, H - 320) : Math.max(240, H - 270);
+      // Keep total headline height comfortably inside the viewport on short screens and iOS Safari.
+      const maxHeadHeight = isMobile ? Math.max(195, H - 310) : Math.max(240, H - 270);
       const totalHeight = rawSizes.reduce((acc, px) => acc + px * 0.92, 0);
       const scale = totalHeight > maxHeadHeight ? maxHeadHeight / totalHeight : 1;
       const finalSizes = rawSizes.map((px) => Math.max(22, px * scale));
@@ -246,7 +251,7 @@ export function Hero() {
       outro: range(P, TIMELINE.outro),
       digitize: range(P, TIMELINE.digitize),
     };
-    const { open, outro } = phases;
+    const { open } = phases;
 
     let activeLayer = -1;
     if (P < TIMELINE.merge[0]) {
@@ -381,11 +386,11 @@ export function Hero() {
       introWrapRef.current.style.pointerEvents = P > 0.07 ? "none" : "";
     }
 
-    // Scroll progress HUD appears cleanly once scrolling through the 4-layer stack.
-    const scrollHud = smoothstep(0.02, 0.07, P) * (1 - outro);
+    // Scroll progress HUD appears cleanly while scrolling through the 4-layer stack.
+    const scrollHud = smoothstep(0.02, 0.06, P) * (1 - smoothstep(0.67, 0.73, P));
     setStyle(metaRef, "opacity", scrollHud);
-    setText(percentRef, padNumber(P * 100, 3));
-    if (barRef.current) barRef.current.style.transform = `scaleX(${P})`;
+    setText(percentRef, padNumber(clamp(P / 0.7) * 100, 3));
+    if (barRef.current) barRef.current.style.transform = `scaleX(${clamp(P / 0.7)})`;
     const status =
       P >= TIMELINE.outro[0]
         ? "IZVOR"
@@ -401,7 +406,6 @@ export function Hero() {
     // Layer caption: each new layer's name slides in from below.
     if (activeLayer >= 0 && activeLayer !== s.captionLayer) {
       const layer = HERO_LAYERS[activeLayer];
-      setText(captionIndexRef, `0${activeLayer + 1} / 0${HERO_LAYERS.length}`);
       setText(captionSpecRef, layer.spec);
       setText(captionNameRef, layer.name);
       setText(captionTextRef, layer.description);
@@ -416,10 +420,10 @@ export function Hero() {
     setStyle(captionRef, "opacity", captionOpacity);
     setStyle(captionRef, "transform", `translate3d(0,${(1 - captionOpacity) * 14}px,0)`);
 
-    // The finished site gets a quiet moment, labelled once.
+    // The finished site gets a quiet moment, then hands off seamlessly as O nas materializes.
     const result =
       smoothstep(TIMELINE.merge[1] - 0.02, TIMELINE.merge[1] + 0.02, P) *
-      (1 - smoothstep(TIMELINE.outro[0], TIMELINE.outro[0] + 0.03, P));
+      (1 - smoothstep(TIMELINE.outro[0], TIMELINE.outro[0] + 0.035, P));
     setStyle(resultRef, "opacity", result);
 
     const cursorLabel = P < 0.06 ? "PRIDRŽI" : activeLayer === 3 ? "VRTI" : "";
@@ -427,7 +431,7 @@ export function Hero() {
   }, visible);
 
   return (
-    <section id="domov" ref={sectionRef} aria-label="Uvod" className="relative h-[360vh]">
+    <section id="domov" ref={sectionRef} aria-label="Uvod" className="relative z-10 h-[420vh]">
       <div
         ref={stageRef}
         data-cursor="explore"
@@ -438,7 +442,7 @@ export function Hero() {
 
         <div
           ref={introWrapRef}
-          className="hero-intro pointer-events-none absolute inset-0 flex flex-col px-[clamp(18px,3vw,64px)] pt-[clamp(86px,11vh,114px)] pb-6"
+          className="hero-intro pointer-events-none absolute inset-0 flex flex-col px-[clamp(18px,3vw,64px)] pt-[clamp(86px,11vh,114px)] pb-[max(24px,env(safe-area-inset-bottom))]"
         >
           {/* Scroll-split baseline rules */}
           <div aria-hidden className="absolute inset-x-0 top-0">
@@ -465,9 +469,8 @@ export function Hero() {
               ref={topBarRef}
               className="flex flex-wrap items-center justify-between gap-2 pb-[1.5vh] font-mono text-[clamp(10px,1.2vw,12px)] tracking-[.18em] uppercase text-white/60 opacity-0"
             >
-              <div className="inline-flex items-center gap-3.5">
-                <span className="font-bold text-brand">01</span>
-                <span aria-hidden className="h-px w-7 bg-white/30" />
+              <div className="inline-flex items-center gap-2.5">
+                <SparkIcon size={13} className="shrink-0 text-brand" />
                 <span>PG INŽENIRING · DIGITALNI STUDIO</span>
               </div>
               <span ref={coordRef} aria-hidden className="hidden tabular-nums text-white/40 nav:inline">
@@ -530,8 +533,8 @@ export function Hero() {
                     className="pointer-events-auto absolute right-0 bottom-0 z-30 flex w-[calc(36%-3vw)] flex-col gap-5 pb-[1.4vw] font-sans font-normal tracking-normal leading-[1.5] opacity-0"
                   >
                     <p className="m-0 max-w-[440px] text-[clamp(15px,1.15vw,19px)] text-pretty text-white/82 drop-shadow-[0_2px_18px_rgba(0,0,0,0.95)]">
-                      Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati —{" "}
-                      <span className="text-white">od prve skice do lansiranja.</span>
+                      Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati.{" "}
+                      <span className="text-white">Od prve skice do lansiranja.</span>
                     </p>
                     <div className="flex flex-wrap items-center gap-2.5">
                       <a
@@ -548,7 +551,7 @@ export function Hero() {
                       <a
                         href="#projekti"
                         data-cursor="link"
-                        className="inline-flex h-[52px] items-center rounded-full border border-white/22 bg-black/70 px-6 font-display text-[15px] font-bold tracking-[-.01em] text-white backdrop-blur-[6px] transition-colors duration-300 hover:border-brand hover:text-brand"
+                        className="inline-flex h-[52px] items-center rounded-full border border-white/22 bg-transparent px-6 font-display text-[15px] font-bold tracking-[-.01em] text-white transition-colors duration-300 hover:border-brand hover:text-brand"
                       >
                         Oglejte si projekte
                       </a>
@@ -727,8 +730,8 @@ export function Hero() {
                 className="pointer-events-auto relative z-20 flex flex-col gap-5 opacity-0 nav:hidden"
               >
                 <p className="hero-description m-0 max-w-[440px] text-[16.5px] leading-[1.5] text-pretty text-white/80">
-                  Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati —{" "}
-                  <span className="text-white">od prve skice do lansiranja.</span>
+                  Oblikujemo in razvijamo spletne strani za podjetja, ki želijo izstopati.{" "}
+                  <span className="text-white">Od prve skice do lansiranja.</span>
                 </p>
                 <div className="flex flex-wrap gap-2.5">
                   <a
@@ -742,7 +745,7 @@ export function Hero() {
                   <a
                     href="#projekti"
                     data-cursor="link"
-                    className="inline-flex min-h-[54px] flex-1 items-center justify-center rounded-full border border-white/22 bg-black/65 px-6 font-display text-[15.5px] font-extrabold whitespace-nowrap text-white transition-colors active:border-brand active:text-brand"
+                    className="inline-flex min-h-[54px] flex-1 items-center justify-center rounded-full border border-white/22 bg-transparent px-6 font-display text-[15.5px] font-extrabold whitespace-nowrap text-white transition-colors active:border-brand active:text-brand"
                   >
                     Oglejte si projekte
                   </a>
@@ -750,18 +753,18 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Bottom Architectural Bar: Latest Published Project Thumbnail + Scroll Cue + X-Ray Hint */}
+            {/* Bottom Architectural Bar: Desktop Latest Published + Scroll Cue + X-Ray Hint */}
             <div
               ref={bottomBarRef}
-              className="pointer-events-auto mt-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-white/10 pt-4 font-mono text-[clamp(10px,1.2vw,11.5px)] tracking-[.15em] uppercase text-white/55 opacity-0 nav:mt-[2.5vh] nav:pt-5"
+              className="pointer-events-auto mt-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-3 border-t border-white/10 pt-4 font-mono text-[clamp(10px,1.2vw,11.5px)] tracking-[.15em] uppercase text-white/55 opacity-0 nav:mt-[2.5vh] nav:justify-between nav:pt-5"
             >
               <a
                 href="#projekti"
                 data-cursor="view"
                 data-cursor-label="PROJEKTI"
-                className="group inline-flex items-center gap-3.5 transition-colors hover:text-brand"
+                className="group hidden items-center gap-3.5 transition-colors hover:text-brand nav:inline-flex"
               >
-                <span className="relative h-[42px] w-[70px] shrink-0 overflow-hidden rounded-md border border-white/14 bg-[#0a0a0a] nav:h-[44px] nav:w-[74px]">
+                <span className="relative h-[44px] w-[74px] shrink-0 overflow-hidden rounded-md border border-white/14 bg-[#0a0a0a]">
                   <Image
                     src={projectScreenshot(PROJECTS[0].slug, "card")}
                     alt={`Predogled projekta ${PROJECTS[0].title}`}
@@ -772,33 +775,25 @@ export function Hero() {
                   />
                 </span>
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-[9.5px] text-brand nav:text-[10.5px]">
-                    NAZADNJE OBJAVLJENO
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 font-display text-[15px] font-extrabold tracking-[-.01em] normal-case text-white transition-colors group-hover:text-brand nav:text-[15.5px]">
+                  <span className="text-[10.5px] text-brand">NAZADNJE OBJAVLJENO</span>
+                  <span className="inline-flex items-center gap-1.5 font-display text-[15.5px] font-extrabold tracking-[-.01em] normal-case text-white transition-colors group-hover:text-brand">
                     <span>{PROJECTS[0].title}</span>
                     <ArrowUpRightIcon size={14} className="text-brand" />
                   </span>
                 </span>
               </a>
 
-              <div
-                aria-hidden
-                className="hidden items-center gap-3 text-white/65 nav:flex"
-              >
-                <span className="h-6 w-px bg-[linear-gradient(#f5751e,transparent)]" />
+              <div aria-hidden className="hidden items-center gap-2 text-white/65 nav:flex">
+                <ArrowDownIcon size={13} className="text-brand" />
                 <span>POMAKNI</span>
               </div>
 
-              <div
-                aria-hidden
-                className="flex items-center gap-2.5"
-              >
-                <span className="size-2 shrink-0 rounded-full border border-brand" />
+              <div aria-hidden className="flex items-center gap-2">
+                <EyeIcon size={14} className="shrink-0 text-brand" />
                 <span>
-                  <span className="text-white">POD POVRŠJEM</span> —{" "}
-                  <span className="nav:hidden">tapnite in pridržite</span>
-                  <span className="hidden nav:inline">pridržite za rentgen</span>
+                  <span className="text-white">POD POVRŠJEM</span>{" "}
+                  <span className="text-white/55 nav:hidden">· tapnite in pridržite</span>
+                  <span className="hidden text-white/55 nav:inline">· pridržite za rentgen</span>
                 </span>
               </div>
             </div>
@@ -810,11 +805,8 @@ export function Hero() {
           aria-live="polite"
           className="pointer-events-none absolute inset-x-0 bottom-[max(62px,env(safe-area-inset-bottom))] mx-auto flex w-[min(92vw,560px)] flex-col items-center gap-2 border-t border-brand/40 bg-black/95 px-4 py-4 text-center opacity-0 nav:bottom-[clamp(62px,8vh,84px)] nav:border-0 nav:bg-transparent nav:p-0"
         >
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[.16em] text-subtle">
-            <span ref={captionIndexRef} className="whitespace-nowrap text-brand">
-              01 / 04
-            </span>
-            <span aria-hidden className="hidden h-px w-6 bg-edge nav:block" />
+          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-[11px] tracking-[.16em] text-subtle">
+            <span aria-hidden className="size-1.5 rounded-full bg-brand" />
             <span ref={captionSpecRef} className="whitespace-nowrap">
               {HERO_LAYERS[0].spec}
             </span>

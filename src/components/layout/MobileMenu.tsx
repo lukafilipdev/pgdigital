@@ -1,77 +1,103 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef } from "react";
-import { ArrowRightIcon, CloseIcon } from "@/components/ui/Icons";
-import { Logo } from "@/components/ui/Logo";
-import { CONTACT_EMAIL, NAV_LINKS } from "@/content/site";
+import { useEffect, useEffectEvent } from "react";
+import {
+  ArrowRightIcon,
+  BespokeLayersIcon,
+  CalendarIcon,
+  ClockIcon,
+  DesignSystemIcon,
+  GlobeIcon,
+  HomeIcon,
+  MailIcon,
+} from "@/components/ui/Icons";
+import { CONTACT_EMAIL } from "@/content/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { cn } from "@/lib/cn";
 
 type MobileMenuProps = {
+  open: boolean;
   activeId?: string;
   onClose: () => void;
 };
 
-export function MobileMenu({ activeId, onClose }: MobileMenuProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
+const MENU_ITEMS = [
+  { id: "domov", label: "Domov", Icon: HomeIcon },
+  { id: "o-nas", label: "O nas", Icon: BespokeLayersIcon },
+  { id: "storitve", label: "Storitve", Icon: DesignSystemIcon },
+  { id: "projekti", label: "Projekti", Icon: GlobeIcon },
+  { id: "proces", label: "Proces", Icon: CalendarIcon },
+  { id: "kontakt", label: "Kontakt", Icon: MailIcon },
+] as const;
+
+export function MobileMenu({ open, activeId, onClose }: MobileMenuProps) {
   const onEscape = useEffectEvent((event: KeyboardEvent) => {
     if (event.key === "Escape") onClose();
   });
-  useScrollLock(true);
+  useScrollLock(open);
 
   useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
+    if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => onEscape(event);
-    closeRef.current?.focus();
     window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      opener?.focus();
-    };
-  }, []);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <div
       role="dialog"
-      aria-modal="true"
+      aria-modal={open}
+      aria-hidden={!open}
       aria-label="Meni"
-      className="fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black px-[clamp(18px,5vw,28px)] pb-6 text-white"
+      className={cn(
+        "fixed inset-0 z-90 flex flex-col justify-between overflow-y-auto bg-black/95 px-[clamp(20px,5.5vw,32px)] pt-[88px] pb-[max(26px,env(safe-area-inset-bottom))] text-white backdrop-blur-2xl",
+        "transition-[clip-path,opacity] duration-550 ease-smooth",
+        open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+      )}
+      style={{
+        clipPath: open
+          ? "circle(150% at calc(100% - 40px) 40px)"
+          : "circle(0% at calc(100% - 40px) 40px)",
+      }}
     >
-      {/* Top bar matching Header height */}
-      <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-white/10">
-        <Logo height={34} tone="dark" alt="PG DIGITAL" eager />
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          aria-label="Zapri meni"
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-white/25 px-4 font-display text-[12px] font-extrabold tracking-[.08em] text-white transition-colors hover:border-brand hover:text-brand"
-        >
-          <span>ZAPRI</span>
-          <CloseIcon size={15} />
-        </button>
-      </div>
+      {/* Subtle top divider beneath the persistent morphing header */}
+      <div className="h-px w-full shrink-0 bg-white/10" />
 
-      {/* Full-bleed monumental editorial navigation list */}
-      <nav aria-label="Meni" className="my-auto py-6">
-        <div className="flex flex-col divide-y divide-white/[0.08]">
-          {NAV_LINKS.map(({ id, label }, index) => {
+      {/* Staggered Modern Navigation List with Crisp Icons */}
+      <nav aria-label="Meni" className="my-auto py-5">
+        <div className="flex flex-col gap-1.5">
+          {MENU_ITEMS.map(({ id, label, Icon }, index) => {
             const isActive = id === activeId;
             return (
               <a
                 key={id}
                 href={`#${id}`}
+                tabIndex={open ? 0 : -1}
                 onClick={onClose}
                 aria-current={isActive ? "location" : undefined}
-                className="group flex items-baseline justify-between gap-4 py-2.5 transition-colors"
+                style={{
+                  transitionDelay: open ? `${90 + index * 45}ms` : "0ms",
+                }}
+                className={cn(
+                  "group flex items-center justify-between gap-4 rounded-2xl px-3.5 py-3 transition-[opacity,transform,background-color,color] duration-500 ease-smooth",
+                  open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+                  isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.04]",
+                )}
               >
-                <span className="flex items-baseline gap-3.5">
-                  <span className="eyebrow-sm tabular-nums text-brand">
-                    {String(index + 1).padStart(2, "0")}
+                <span className="flex items-center gap-4">
+                  <span
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors duration-300",
+                      isActive
+                        ? "border-brand/50 bg-brand/15 text-brand"
+                        : "border-white/12 bg-white/[0.03] text-white/65 group-hover:border-brand/40 group-hover:text-brand",
+                    )}
+                  >
+                    <Icon size={18} />
                   </span>
                   <span
                     className={cn(
-                      "font-display text-[clamp(36px,11vw,58px)] leading-[1.04] font-extrabold tracking-[-.045em] transition-colors",
+                      "font-display text-[clamp(28px,8.5vw,44px)] leading-none font-extrabold tracking-[-.04em] transition-colors duration-300",
                       isActive ? "text-brand" : "text-white group-hover:text-brand",
                     )}
                   >
@@ -82,7 +108,7 @@ export function MobileMenu({ activeId, onClose }: MobileMenuProps) {
                 <ArrowRightIcon
                   size={18}
                   className={cn(
-                    "shrink-0 transition-transform duration-250 group-hover:translate-x-1",
+                    "shrink-0 transition-transform duration-300 group-hover:translate-x-1",
                     isActive ? "text-brand" : "text-white/30 group-hover:text-brand",
                   )}
                 />
@@ -92,22 +118,34 @@ export function MobileMenu({ activeId, onClose }: MobileMenuProps) {
         </div>
       </nav>
 
-      {/* Bottom studio contact & primary CTA */}
-      <div className="flex shrink-0 flex-col gap-4 border-t border-white/10 pt-5">
-        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] tracking-[.12em] uppercase text-muted">
+      {/* Bottom Studio Contact & Primary CTA */}
+      <div
+        style={{ transitionDelay: open ? "340ms" : "0ms" }}
+        className={cn(
+          "flex shrink-0 flex-col gap-4 border-t border-white/10 pt-5 transition-[opacity,transform] duration-500 ease-smooth",
+          open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+        )}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10.5px] tracking-[.12em] text-white/60">
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="text-soft transition-colors hover:text-brand"
+            tabIndex={open ? 0 : -1}
+            className="inline-flex items-center gap-2 text-white/80 transition-colors hover:text-brand"
           >
-            {CONTACT_EMAIL}
+            <MailIcon size={13} className="text-brand" />
+            <span>{CONTACT_EMAIL}</span>
           </a>
-          <span className="text-white/70">ODZIV V 24 URAH</span>
+          <span className="inline-flex items-center gap-1.5 text-white/65">
+            <ClockIcon size={13} className="text-brand" />
+            <span>ODZIV V 24 URAH</span>
+          </span>
         </div>
 
         <a
           href="#kontakt"
+          tabIndex={open ? 0 : -1}
           onClick={onClose}
-          className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-brand font-display text-[15px] font-extrabold text-black transition-colors hover:bg-white"
+          className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-brand font-display text-[15.5px] font-extrabold text-black transition-colors hover:bg-white"
         >
           <span>Začnimo projekt</span>
           <ArrowRightIcon size={16} />

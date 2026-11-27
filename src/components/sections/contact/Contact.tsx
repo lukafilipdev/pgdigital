@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { Footer } from "@/components/layout/Footer";
+import { ClockIcon, MailIcon, MapPinIcon } from "@/components/ui/Icons";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { CONTACT_EMAIL } from "@/content/site";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -62,7 +63,7 @@ export function Contact() {
       <div className="relative z-10 mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-[clamp(32px,5vh,64px)]">
         {/* Full-Width Auto-Fitted Section Header */}
         <div className="flex flex-col gap-[clamp(16px,2vw,24px)]">
-          <SectionLabel index="06">KONTAKT</SectionLabel>
+          <SectionLabel icon={<MailIcon size={14} />}>KONTAKT</SectionLabel>
 
           <div
             ref={headRef}
@@ -112,8 +113,9 @@ export function Contact() {
             </p>
 
             <div className="flex flex-col gap-3">
-              <span className="font-mono text-[10px] font-bold tracking-[.18em] text-white/60">
-                ALI PIŠITE NEPOSREDNO
+              <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold tracking-[.18em] text-white/60">
+                <MailIcon size={12} className="text-brand" />
+                <span>ALI PIŠITE NEPOSREDNO</span>
               </span>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                 <a
@@ -129,8 +131,9 @@ export function Contact() {
 
             <div className="grid grid-cols-2 gap-5">
               <div className="flex flex-col gap-1.5">
-                <span className="font-mono text-[10px] font-bold tracking-[.18em] text-white/60">
-                  LOKACIJA
+                <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-[.18em] text-white/60">
+                  <MapPinIcon size={12} className="text-brand" />
+                  <span>LOKACIJA</span>
                 </span>
                 <span className="font-display text-[17px] font-extrabold text-white">
                   Prekmurje, Slovenija
@@ -138,8 +141,9 @@ export function Contact() {
                 <span className="text-[14px] text-white/60">Projekti po celi SI in EU</span>
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="font-mono text-[10px] font-bold tracking-[.18em] text-white/60">
-                  ODZIVNOST
+                <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-[.18em] text-white/60">
+                  <ClockIcon size={12} className="text-brand" />
+                  <span>ODZIVNOST</span>
                 </span>
                 <span className="font-display text-[17px] font-extrabold text-white">V 24 urah</span>
                 <span className="text-[14px] text-white/60">Prosti termini 2026</span>

@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/Icons";
+import { ArrowRightIcon, ArrowUpRightIcon, GlobeIcon, SparkIcon } from "@/components/ui/Icons";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { PROJECTS, projectScreenshot, type Project } from "@/content/site";
 import { useFrame } from "@/hooks/useFrame";
 import { useInViewOnce, useInViewport } from "@/hooks/useInView";
 import { useHoverEffects, useReducedMotion } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
-import { approach, padNumber } from "@/lib/math";
+import { approach } from "@/lib/math";
 import { CaseStudyDialog } from "./CaseStudyDialog";
 
 type OpenCase = { index: number; origin: DOMRect };
@@ -72,7 +72,7 @@ export function Projects() {
         {/* Section Header */}
         <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-6">
           <div className="flex flex-col gap-4">
-            <SectionLabel index="04">PROJEKTI</SectionLabel>
+            <SectionLabel icon={<GlobeIcon size={14} />}>PROJEKTI</SectionLabel>
             <h2
               id="projekti-h"
               className="m-0 overflow-hidden pb-[.06em] font-display text-[clamp(48px,6.4vw,120px)] leading-[.9] font-extrabold tracking-[-.055em] text-white"
@@ -95,10 +95,10 @@ export function Projects() {
             )}
           >
             <span className="font-mono text-[11px] font-bold tracking-[.18em] text-brand">
-              {padNumber(PROJECTS.length, 2)} OBJAVLJENA PROJEKTA · 2026
+              OBJAVLJENI PROJEKTI · 2026
             </span>
             <p className="m-0 text-[clamp(16px,1.15vw,19px)] leading-[1.52] text-pretty text-soft">
-              Vsaka spletna stran je zgrajena od temeljev —{" "}
+              Vsaka spletna stran je zgrajena od temeljev,{" "}
               <span className="font-medium text-white">
                 po meri znamke, brez šablon in kompromisov.
               </span>
@@ -118,16 +118,16 @@ export function Projects() {
           ))}
         </div>
 
-        {/* Colossal Hollow Wireframe "Vaš projekt?" Closing CTA */}
+        {/* Colossal Hollow Wireframe "Vaš projekt?" Closing CTA (rasterized shadow outline — spotless on Safari & Chrome) */}
         <a
           href="#kontakt"
           data-cursor="link"
           className="group relative flex flex-col gap-4 border-t border-white/12 pt-[clamp(22px,2.6vw,34px)] transition-colors"
         >
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.3vw,12px)] tracking-[.18em] uppercase text-white/60">
-            <span className="inline-flex items-center gap-3.5">
+            <span className="inline-flex items-center gap-2.5">
+              <SparkIcon size={13} className="text-brand" />
               <span className="font-bold text-brand">NASLEDNJI</span>
-              <span aria-hidden className="h-px w-7 bg-white/30" />
               <span>VAŠA ZNAMKA</span>
             </span>
             <span className="inline-flex items-center gap-2 text-white transition-colors group-hover:text-brand">
@@ -145,7 +145,11 @@ export function Projects() {
           >
             <span
               data-fit="1"
-              className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[15vw] text-transparent [-webkit-text-stroke:1.4px_#F5751E] transition-colors duration-450 group-hover:text-brand"
+              style={{
+                textShadow:
+                  "1.35px 0 0 #f5751e, -1.35px 0 0 #f5751e, 0 1.35px 0 #f5751e, 0 -1.35px 0 #f5751e, 1px 1px 0 #f5751e, -1px -1px 0 #f5751e, 1px -1px 0 #f5751e, -1px 1px 0 #f5751e",
+              }}
+              className="inline-block pt-[0.06em] pb-[0.04em] whitespace-nowrap text-[15vw] text-black transition-colors duration-450 group-hover:text-brand"
             >
               Vaš projekt?
             </span>
@@ -305,9 +309,8 @@ function ProjectSpread({
     >
       {/* Project Meta Strip */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.3vw,12px)] tracking-[.18em] uppercase text-white/60">
-        <div className="inline-flex items-center gap-3.5">
-          <span className="font-bold text-brand">{padNumber(index + 1, 2)}</span>
-          <span aria-hidden className="h-px w-7 bg-white/30" />
+        <div className="inline-flex items-center gap-2.5">
+          <GlobeIcon size={13} className="text-brand" />
           <span>{project.category}</span>
         </div>
         <a

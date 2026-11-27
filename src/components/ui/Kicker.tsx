@@ -19,7 +19,7 @@ export function Kicker({ left, right, className, ref }: KickerProps) {
       )}
     >
       <span>{left}</span>
-      <span aria-hidden className="h-px w-[18px] shrink-0 bg-brand" />
+      <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand" />
       <span>{right}</span>
     </div>
   );

@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRightIcon } from "@/components/ui/Icons";
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CodeEngineIcon,
+  DesignSystemIcon,
+  RocketIcon,
+  StrategyIcon,
+} from "@/components/ui/Icons";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { useFrame } from "@/hooks/useFrame";
 import { useInViewOnce, useInViewport } from "@/hooks/useInView";
@@ -11,50 +20,59 @@ import { approach, clamp } from "@/lib/math";
 
 const STEPS = [
   {
-    index: "01",
+    id: "strategija",
+    Icon: StrategyIcon,
     title: "Ideja in strategija",
     mobileLines: ["Ideja in", "strategija"],
     short: "STRATEGIJA",
     start: 0,
     end: 1,
-    weeks: "TEDEN 01",
+    weeks: "TEDEN 1",
     description:
       "Razumemo vaš posel, ciljno občinstvo in prodajni tok. Določimo jasno strukturo vsebine, ki obiskovalca vodi do povpraševanja.",
   },
   {
-    index: "02",
+    id: "oblikovanje",
+    Icon: DesignSystemIcon,
     title: "Oblikovanje sistema",
     mobileLines: ["Oblikovanje", "sistema"],
     short: "OBLIKOVANJE",
     start: 1,
     end: 3,
-    weeks: "TEDEN 02–03",
+    weeks: "TEDEN 2 DO 3",
     description:
-      "Zasnujemo tipografijo, barvni sistem, interaktivne komponente in vizualno smer po meri vaše blagovne znamke — brez šablon.",
+      "Zasnujemo tipografijo, barvni sistem, interaktivne komponente in vizualno smer po meri vaše blagovne znamke, brez šablon.",
   },
   {
-    index: "03",
+    id: "razvoj",
+    Icon: CodeEngineIcon,
     title: "Inženiring in razvoj",
     mobileLines: ["Inženiring", "in razvoj"],
     short: "RAZVOJ",
     start: 2.5,
     end: 5,
-    weeks: "TEDEN 03–05",
+    weeks: "TEDEN 3 DO 5",
     description:
       "Obliko pretvorimo v hitro, varno Next.js in TypeScript kodo z gibanjem pri 60 FPS, tehničnim SEO in čistim urejanjem vsebin.",
   },
   {
-    index: "04",
+    id: "objava",
+    Icon: RocketIcon,
     title: "Objava in podpora",
     mobileLines: ["Objava in", "podpora"],
     short: "OBJAVA",
     start: 5,
     end: 6,
-    weeks: "TEDEN 06",
+    weeks: "TEDEN 6",
     description:
       "Pred objavo preverimo hitrost, dostopnost in vse naprave. Stran postavimo v produkcijo ter skrbimo za posodobitve in rast.",
   },
 ] as const;
+
+const HOLLOW_TEXT_SHADOW =
+  "1.25px 0 0 rgba(10,10,10,0.3), -1.25px 0 0 rgba(10,10,10,0.3), 0 1.25px 0 rgba(10,10,10,0.3), 0 -1.25px 0 rgba(10,10,10,0.3), 0.9px 0.9px 0 rgba(10,10,10,0.3), -0.9px -0.9px 0 rgba(10,10,10,0.3), 0.9px -0.9px 0 rgba(10,10,10,0.3), -0.9px 0.9px 0 rgba(10,10,10,0.3)";
+const HOLLOW_DOT_SHADOW =
+  "1.25px 0 0 #f5751e, -1.25px 0 0 #f5751e, 0 1.25px 0 #f5751e, 0 -1.25px 0 #f5751e, 0.9px 0.9px 0 #f5751e, -0.9px -0.9px 0 #f5751e, 0.9px -0.9px 0 #f5751e, -0.9px 0.9px 0 #f5751e";
 
 const TOTAL_WEEKS = 6;
 const PLAY_MS = 18000;
@@ -308,7 +326,7 @@ export function Process() {
         {/* Section Header */}
         <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-6">
           <div className="flex flex-col gap-4">
-            <SectionLabel index="05" tone="light">
+            <SectionLabel icon={<CalendarIcon size={14} />} tone="light">
               PROCES
             </SectionLabel>
             <h2
@@ -335,7 +353,7 @@ export function Process() {
             )}
           >
             <span className="font-mono text-[11px] font-bold tracking-[.18em] text-brand-dark">
-              04 KORAKI · 4–6 TEDNOV DO OBJAVE
+              ŠTIRI FAZE · 4 DO 6 TEDNOV DO OBJAVE
             </span>
             <p className="m-0 text-[clamp(16px,1.15vw,19px)] leading-[1.52] text-pretty text-ink-soft">
               Jasni roki, fiksen obseg in{" "}
@@ -354,7 +372,7 @@ export function Process() {
             <span>ČASOVNICA PROJEKTA</span>
             <span className="text-ink-muted">
               <span className="nav:hidden">POVLECITE</span>
-              <span className="hidden nav:inline">POVLECITE ALI KLIKNITE KORAK</span>
+              <span className="hidden nav:inline">POVLECITE ALI KLIKNITE FAZO</span>
             </span>
           </div>
 
@@ -363,7 +381,7 @@ export function Process() {
             {WEEK_NUMS.map((n) => (
               <span key={n} className="pl-2">
                 <span className="nav:hidden">T{n}</span>
-                <span className="hidden nav:inline">TEDEN 0{n}</span>
+                <span className="hidden nav:inline">TEDEN {n}</span>
               </span>
             ))}
           </div>
@@ -380,10 +398,10 @@ export function Process() {
             {STEPS.map((step, i) => {
               const narrow = step.end - step.start <= 1;
               return (
-                <div key={step.index} className="relative h-[clamp(30px,2.4vw,38px)]">
+                <div key={step.id} className="relative h-[clamp(30px,2.4vw,38px)]">
                   <button
                     type="button"
-                    aria-label={`${step.index} ${step.title} (${step.weeks})`}
+                    aria-label={`${step.title} (${step.weeks})`}
                     onClick={() => {
                       if (play.current.dragMoved) return;
                       play.current.touched = true;
@@ -396,7 +414,7 @@ export function Process() {
                     className="absolute inset-y-0 cursor-pointer rounded-[6px] bg-ink/[0.06] text-left shadow-[inset_0_0_0_1px_rgba(10,10,10,0.08)]"
                   >
                     <span className="absolute inset-0 flex items-center gap-2 overflow-hidden px-2.5 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-ink-soft">
-                      <span>{step.index}</span>
+                      <step.Icon size={12} className="shrink-0" />
                       <span className={narrow ? "hidden sm:inline" : undefined}>{step.short}</span>
                     </span>
                     <span
@@ -406,7 +424,7 @@ export function Process() {
                       style={{ clipPath: "inset(0 100% 0 0)" }}
                     >
                       <span className="absolute inset-0 flex items-center gap-2 overflow-hidden px-2.5 font-mono text-[10px] font-bold tracking-[.12em] whitespace-nowrap text-paper">
-                        <span>{step.index}</span>
+                        <step.Icon size={12} className="shrink-0" />
                         <span className={narrow ? "hidden sm:inline" : undefined}>{step.short}</span>
                       </span>
                     </span>
@@ -435,32 +453,35 @@ export function Process() {
           {/* Desktop Magnetic Scrubber Cursor Pill */}
           <span
             aria-hidden
-            className="pointer-events-none absolute top-0 left-0 z-30 -mt-[42px] -ml-[42px] hidden size-[84px] items-center justify-center rounded-full bg-ink/90 font-mono text-[9.5px] font-bold tracking-[.12em] whitespace-nowrap text-paper shadow-[0_14px_32px_rgba(0,0,0,0.22)] will-change-transform nav:flex"
+            className="pointer-events-none absolute top-0 left-0 z-30 -mt-[42px] -ml-[42px] hidden size-[84px] items-center justify-center gap-0.5 rounded-full bg-ink/90 font-mono text-[9.5px] font-bold tracking-[.12em] whitespace-nowrap text-paper shadow-[0_14px_32px_rgba(0,0,0,0.22)] will-change-transform nav:flex"
             style={{
               transform: "translate3d(var(--cx, 50%), var(--cy, 50%), 0) scale(var(--cs, 0))",
             }}
           >
-            ◂ POVLECI ▸
+            <ChevronLeftIcon size={11} className="text-brand" />
+            <span>POVLECI</span>
+            <ChevronRightIcon size={11} className="text-brand" />
           </span>
         </div>
 
         {/* Colossal Live-Filling Active Step Detail */}
         <div className="mt-4 flex flex-col gap-[clamp(18px,2.2vw,28px)]">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[clamp(10px,1.3vw,12px)] tracking-[.18em] text-ink-soft">
-            <div className="inline-flex items-center gap-3.5">
-              <span className="font-bold text-brand">KORAK {cur.index} / 04</span>
-              <span aria-hidden className="h-px w-7 bg-ink/30" />
+            <div className="inline-flex items-center gap-2.5">
+              <cur.Icon size={14} className="text-brand" />
+              <span className="font-bold text-brand">{cur.short}</span>
+              <span className="text-ink-muted">·</span>
               <span>{cur.weeks}</span>
             </div>
 
-            <div className="flex items-center gap-1.5" role="tablist" aria-label="Koraki procesa">
+            <div className="flex items-center gap-1.5" role="tablist" aria-label="Faze procesa">
               {STEPS.map((step, i) => (
                 <button
-                  key={step.index}
+                  key={step.id}
                   type="button"
                   role="tab"
                   aria-selected={i === active}
-                  aria-label={`${step.index} ${step.title}`}
+                  aria-label={step.title}
                   data-cursor="link"
                   onClick={() => {
                     play.current.touched = true;
@@ -485,17 +506,17 @@ export function Process() {
             className="relative w-full font-display leading-[.92] font-extrabold tracking-[-.055em]"
           >
             <div ref={stepAnimRef} className="relative">
-              {/* Base Hollow Outline Layer */}
-              <h3 className="m-0 text-transparent [-webkit-text-stroke:1.4px_rgba(10,10,10,0.28)]">
+              {/* Base Hollow Outline Layer — rasterized shadow outline works cleanly on Safari & Chrome */}
+              <h3 className="m-0 text-paper" style={{ textShadow: HOLLOW_TEXT_SHADOW }}>
                 {lines.map((txt, idx) => (
-                  <span key={`${cur.index}-${idx}`} className="block">
+                  <span key={`${cur.id}-${idx}`} className="block">
                     <span
                       data-fit="1"
                       className="inline-block pt-[0.04em] pb-[0.04em] whitespace-nowrap text-[9vw]"
                     >
                       <span>{txt}</span>
                       {idx === lines.length - 1 && (
-                        <span className="[-webkit-text-stroke-color:#f5751e]">.</span>
+                        <span style={{ textShadow: HOLLOW_DOT_SHADOW }}>.</span>
                       )}
                     </span>
                   </span>
@@ -510,7 +531,7 @@ export function Process() {
                 style={{ clipPath: "inset(0 100% 0 0)" }}
               >
                 {lines.map((txt, idx) => (
-                  <span key={`${cur.index}-fill-${idx}`} className="block">
+                  <span key={`${cur.id}-fill-${idx}`} className="block">
                     <span
                       data-fit="1"
                       className="inline-block pt-[0.04em] pb-[0.04em] whitespace-nowrap text-[9vw]"

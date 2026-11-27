@@ -59,6 +59,22 @@ export function ArrowDownIcon(props: IconProps) {
   );
 }
 
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="m15 18-6-6 6-6" />
+    </SvgIcon>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="m9 18 6-6-6-6" />
+    </SvgIcon>
+  );
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -85,7 +101,109 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
-/** 01 · Spletno oblikovanje — architectural layout & modular grid. */
+export function SparkIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="M12 3v4" />
+      <path d="M12 17v4" />
+      <path d="M3 12h4" />
+      <path d="M17 12h4" />
+      <path d="m5.6 5.6 2.8 2.8" />
+      <path d="m15.6 15.6 2.8 2.8" />
+      <path d="m18.4 5.6-2.8 2.8" />
+      <path d="m8.4 15.6-2.8 2.8" />
+    </SvgIcon>
+  );
+}
+
+export function HomeIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5.5 9.5V20h13V9.5" />
+    </SvgIcon>
+  );
+}
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5-9.5-6.5-9.5-6.5Z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </SvgIcon>
+  );
+}
+
+export function GlobeIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a13.5 13.5 0 0 1 0 18" />
+      <path d="M12 3a13.5 13.5 0 0 0 0 18" />
+    </SvgIcon>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4" />
+      <path d="M8 3v4" />
+      <path d="M3 10h18" />
+    </SvgIcon>
+  );
+}
+
+export function MailIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </SvgIcon>
+  );
+}
+
+export function MapPinIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 1 1 13 0c0 5.2-6.5 11-6.5 11Z" />
+      <circle cx="12" cy="10" r="2.2" />
+    </SvgIcon>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </SvgIcon>
+  );
+}
+
+export function StrategyIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5 15.5 8.5" />
+    </SvgIcon>
+  );
+}
+
+export function RocketIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z" />
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+    </SvgIcon>
+  );
+}
+
+/** Spletno oblikovanje — architectural layout & modular grid. */
 export function DesignSystemIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -97,7 +215,7 @@ export function DesignSystemIcon(props: IconProps) {
   );
 }
 
-/** 02 · Spletni razvoj — precision engineering code brackets. */
+/** Spletni razvoj — precision engineering code brackets. */
 export function CodeEngineIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -108,7 +226,7 @@ export function CodeEngineIcon(props: IconProps) {
   );
 }
 
-/** 03 · E-commerce — sleek geometric retail bag. */
+/** E-commerce — sleek geometric retail bag. */
 export function CommerceBagIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -118,7 +236,7 @@ export function CommerceBagIcon(props: IconProps) {
   );
 }
 
-/** 04 · Vzdrževanje in optimizacija — performance pulse & uptime shield. */
+/** Vzdrževanje in optimizacija — performance pulse & uptime shield. */
 export function SpeedShieldIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -128,7 +246,7 @@ export function SpeedShieldIcon(props: IconProps) {
   );
 }
 
-/** O nas pillar 01 — architectural ruler / precision compass. */
+/** O nas pillar — architectural precision target. */
 export function PrecisionIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -142,7 +260,7 @@ export function PrecisionIcon(props: IconProps) {
   );
 }
 
-/** O nas pillar 02 — bespoke stacked architectural planes. */
+/** O nas pillar — bespoke stacked architectural planes. */
 export function BespokeLayersIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
@@ -153,7 +271,7 @@ export function BespokeLayersIcon(props: IconProps) {
   );
 }
 
-/** O nas pillar 03 — long-term responsibility & partnership. */
+/** O nas pillar — long-term responsibility & partnership. */
 export function PartnershipShieldIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
